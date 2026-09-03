@@ -1,8 +1,8 @@
-\# Secure Boot Project – Project Overview
+# Secure Boot Project – Project Overview
 
 
 
-\## 1. Introduction
+## 1. Introduction
 
 
 
@@ -14,7 +14,7 @@ The primary objective is to ensure that the microcontroller executes only a vali
 
 
 
-\## 2. Problem Statement
+## 2. Problem Statement
 
 
 
@@ -30,7 +30,7 @@ Secure Boot introduces a verification step before application execution.
 
 
 
-\## 3. Project Objective
+## 3. Project Objective
 
 
 
@@ -38,23 +38,23 @@ The Secure Bootloader will:
 
 
 
-\- Start execution after MCU reset.
+- Start execution after MCU reset.
 
-\- Identify the installed application firmware.
+- Identify the installed application firmware.
 
-\- Validate the application firmware.
+- Validate the application firmware.
 
-\- Verify firmware integrity.
+- Verify firmware integrity.
 
-\- Verify firmware authenticity.
+- Verify firmware authenticity.
 
-\- Execute the application only when verification succeeds.
+- Execute the application only when verification succeeds.
 
-\- Handle invalid or corrupted firmware safely.
+- Handle invalid or corrupted firmware safely.
 
 
 
-\## 4. High-Level Architecture
+## 4. High-Level Architecture
 
 
 
@@ -62,7 +62,7 @@ The system consists of two major software components:
 
 
 
-\### Bootloader
+### Bootloader
 
 
 
@@ -74,19 +74,19 @@ Responsibilities include:
 
 
 
-\- Boot decision
+- Boot decision
 
-\- Application image validation
+- Application image validation
 
-\- Firmware verification
+- Firmware verification
 
-\- Failure handling
+- Failure handling
 
-\- Application handover
+- Application handover
 
 
 
-\### Application
+### Application
 
 
 
@@ -98,7 +98,7 @@ The Application is executed only after the Bootloader successfully validates the
 
 
 
-\## 5. Development Approach
+## 5. Development Approach
 
 
 
@@ -128,23 +128,23 @@ The project will be developed incrementally:
 
 
 
-\## 6. Target Platform
+## 6. Target Platform
 
 
 
-\- MCU: STM32
+- MCU: STM32
 
-\- CPU: ARM Cortex-M
+- CPU: ARM Cortex-M
 
-\- Language: Embedded C
+- Language: Embedded C
 
-\- Debug Interface: SWD
+- Debug Interface: SWD
 
-\- Development Environment: STM32CubeIDE
+- Development Environment: STM32CubeIDE
 
 
 
-\## 7. Project Status
+## 7. Project Status
 
 
 
