@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <sha256.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,7 +47,12 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+const uint8_t data[] = "A secure bootloader starts at system reset, checks the application image, calculates its SHA-256 hash, and compares the result with the expected value stored in protected metadata. Only after the firmware passes integrity and authenticity checks does the bootloader transfer control to the application.";
 
+uint64_t length_of_data = (sizeof(data)/sizeof(data[0])) - 1;
+uint8_t digest[SHA256_DIGEST_SIZE];
+
+SHA256_Context ctx;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -128,7 +134,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  SHA256_Init(&ctx);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -139,6 +145,10 @@ int main(void)
   	  	HAL_Delay(200);
   	  	timer++;
   }
+
+  /* Check for hashing first */
+  SHA256_Update(&ctx, data, length_of_data);
+  SHA256_Final(&ctx, digest);
 
   // After blinking, hand over control to main application
   jump_to_application();
