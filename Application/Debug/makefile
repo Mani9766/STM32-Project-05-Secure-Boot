@@ -60,8 +60,8 @@ all: main-build
 main-build: Main_App.elf secondary-outputs
 
 # Tool invocations
-Main_App.elf Main_App.map: $(OBJS) $(USER_OBJS) D:\Manisha\ Daigavhane\software\workspace\Github_Repositories\stm32-bootloader-led-demo\Main_App\STM32F407VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Main_App.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\Manisha Daigavhane\software\workspace\Github_Repositories\stm32-bootloader-led-demo\Main_App\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Main_App.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Main_App.elf Main_App.map: $(OBJS) $(USER_OBJS) D:\Manisha\ Daigavhane\software\workspace\Github_Repositories\STM32-Project-05-Secure-Boot\Application\STM32F407VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Main_App.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\Manisha Daigavhane\software\workspace\Github_Repositories\STM32-Project-05-Secure-Boot\Application\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Main_App.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
