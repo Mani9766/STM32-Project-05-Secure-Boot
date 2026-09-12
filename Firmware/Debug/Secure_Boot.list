@@ -7,47 +7,47 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
   1 .text         00002a34  08000188  08000188  00001188  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .rodata       000002b4  08002bbc  08002bbc  00003bbc  2**2
+  2 .rodata       00000184  08002bbc  08002bbc  00003bbc  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  3 .ARM.extab    00000000  08002e70  08002e70  00004070  2**0
+  3 .ARM.extab    00000000  08002d40  08002d40  0000406c  2**0
                   CONTENTS, READONLY
-  4 .ARM          00000008  08002e70  08002e70  00003e70  2**2
+  4 .ARM          00000008  08002d40  08002d40  00003d40  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  5 .preinit_array 00000000  08002e78  08002e78  00004070  2**0
+  5 .preinit_array 00000000  08002d48  08002d48  0000406c  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  6 .init_array   00000004  08002e78  08002e78  00003e78  2**2
+  6 .init_array   00000004  08002d48  08002d48  00003d48  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  7 .fini_array   00000004  08002e7c  08002e7c  00003e7c  2**2
+  7 .fini_array   00000004  08002d4c  08002d4c  00003d4c  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  8 .data         00000070  20000000  08002e80  00004000  2**3
+  8 .data         0000006c  20000000  08002d50  00004000  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  9 .ccmram       00000000  10000000  10000000  00004070  2**0
+  9 .ccmram       00000000  10000000  10000000  0000406c  2**0
                   CONTENTS
  10 .bss          00000204  20000070  20000070  00004070  2**3
                   ALLOC
  11 ._user_heap_stack 00000604  20000274  20000274  00004070  2**0
                   ALLOC
- 12 .ARM.attributes 00000030  00000000  00000000  00004070  2**0
+ 12 .ARM.attributes 00000030  00000000  00000000  0000406c  2**0
                   CONTENTS, READONLY
- 13 .debug_info   00004595  00000000  00000000  000040a0  2**0
+ 13 .debug_info   0000456e  00000000  00000000  0000409c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_abbrev 00001271  00000000  00000000  00008635  2**0
+ 14 .debug_abbrev 00001268  00000000  00000000  0000860a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_aranges 00000518  00000000  00000000  000098a8  2**3
+ 15 .debug_aranges 00000518  00000000  00000000  00009878  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_rnglists 000003a6  00000000  00000000  00009dc0  2**0
+ 16 .debug_rnglists 000003a6  00000000  00000000  00009d90  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_macro  00020ad3  00000000  00000000  0000a166  2**0
+ 17 .debug_macro  00020ad3  00000000  00000000  0000a136  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line   0000666b  00000000  00000000  0002ac39  2**0
+ 18 .debug_line   0000666c  00000000  00000000  0002ac09  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    000c273f  00000000  00000000  000312a4  2**0
+ 19 .debug_str    000c273e  00000000  00000000  00031275  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .comment      00000043  00000000  00000000  000f39e3  2**0
+ 20 .comment      00000043  00000000  00000000  000f39b3  2**0
                   CONTENTS, READONLY
- 21 .debug_frame  000018b4  00000000  00000000  000f3a28  2**2
+ 21 .debug_frame  000018b4  00000000  00000000  000f39f8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .debug_line_str 00000091  00000000  00000000  000f52dc  2**0
+ 22 .debug_line_str 00000091  00000000  00000000  000f52ac  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -420,12 +420,13 @@ void jump_to_application(void)
  8000522:	4293      	cmp	r3, r2
  8000524:	d303      	bcc.n	800052e <jump_to_application+0x3a>
  8000526:	68bb      	ldr	r3, [r7, #8]
- 8000528:	f1b3 6f01 	cmp.w	r3, #135266304	@ 0x8100000
- 800052c:	d303      	bcc.n	8000536 <jump_to_application+0x42>
+ 8000528:	4a13      	ldr	r2, [pc, #76]	@ (8000578 <jump_to_application+0x84>)
+ 800052a:	4293      	cmp	r3, r2
+ 800052c:	d903      	bls.n	8000536 <jump_to_application+0x42>
         (app_reset_handler >= APP_END_ADDRESS))
     {
         printf("Invalid Application Reset Handler\r\n");
- 800052e:	4812      	ldr	r0, [pc, #72]	@ (8000578 <jump_to_application+0x84>)
+ 800052e:	4813      	ldr	r0, [pc, #76]	@ (800057c <jump_to_application+0x88>)
  8000530:	f001 ffa4 	bl	800247c <puts>
         return;
  8000534:	e015      	b.n	8000562 <jump_to_application+0x6e>
@@ -439,7 +440,7 @@ void jump_to_application(void)
  800053e:	d103      	bne.n	8000548 <jump_to_application+0x54>
     {
         printf("Invalid Reset Handler: Thumb bit not set\r\n");
- 8000540:	480e      	ldr	r0, [pc, #56]	@ (800057c <jump_to_application+0x88>)
+ 8000540:	480f      	ldr	r0, [pc, #60]	@ (8000580 <jump_to_application+0x8c>)
  8000542:	f001 ff9b 	bl	800247c <puts>
         return;
  8000546:	e00c      	b.n	8000562 <jump_to_application+0x6e>
@@ -447,7 +448,7 @@ void jump_to_application(void)
 
     /* Point Cortex-M to Application vector table */
     SCB->VTOR = APP_START_ADDRESS;
- 8000548:	4b0d      	ldr	r3, [pc, #52]	@ (8000580 <jump_to_application+0x8c>)
+ 8000548:	4b0e      	ldr	r3, [pc, #56]	@ (8000584 <jump_to_application+0x90>)
  800054a:	4a07      	ldr	r2, [pc, #28]	@ (8000568 <jump_to_application+0x74>)
  800054c:	609a      	str	r2, [r3, #8]
  800054e:	68fb      	ldr	r3, [r7, #12]
@@ -483,81 +484,82 @@ __STATIC_FORCEINLINE void __set_MSP(uint32_t topOfMainStack)
  800056c:	08008004 	.word	0x08008004
  8000570:	20020000 	.word	0x20020000
  8000574:	08002bbc 	.word	0x08002bbc
- 8000578:	08002be0 	.word	0x08002be0
- 800057c:	08002c04 	.word	0x08002c04
- 8000580:	e000ed00 	.word	0xe000ed00
+ 8000578:	08009a0b 	.word	0x08009a0b
+ 800057c:	08002be0 	.word	0x08002be0
+ 8000580:	08002c04 	.word	0x08002c04
+ 8000584:	e000ed00 	.word	0xe000ed00
 
-08000584 <main>:
+08000588 <main>:
 /**
   * @brief  The application entry point.
   * @retval int
   */
 int main(void)
 {
- 8000584:	b580      	push	{r7, lr}
- 8000586:	b082      	sub	sp, #8
- 8000588:	af00      	add	r7, sp, #0
+ 8000588:	b580      	push	{r7, lr}
+ 800058a:	b082      	sub	sp, #8
+ 800058c:	af00      	add	r7, sp, #0
 
   /* USER CODE BEGIN 1 */
   int timer = 0;
- 800058a:	2300      	movs	r3, #0
- 800058c:	607b      	str	r3, [r7, #4]
+ 800058e:	2300      	movs	r3, #0
+ 8000590:	607b      	str	r3, [r7, #4]
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
- 800058e:	f000 fead 	bl	80012ec <HAL_Init>
+ 8000592:	f000 feab 	bl	80012ec <HAL_Init>
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
- 8000592:	f000 f82f 	bl	80005f4 <SystemClock_Config>
+ 8000596:	f000 f82d 	bl	80005f4 <SystemClock_Config>
 
   /* USER CODE BEGIN SysInit */
   SHA256_Init(&ctx);
- 8000596:	4812      	ldr	r0, [pc, #72]	@ (80005e0 <main+0x5c>)
- 8000598:	f000 fd38 	bl	800100c <SHA256_Init>
+ 800059a:	4811      	ldr	r0, [pc, #68]	@ (80005e0 <main+0x58>)
+ 800059c:	f000 fd36 	bl	800100c <SHA256_Init>
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
- 800059c:	f000 f894 	bl	80006c8 <MX_GPIO_Init>
+ 80005a0:	f000 f892 	bl	80006c8 <MX_GPIO_Init>
   /* USER CODE BEGIN 2 */
   while(timer<25){
- 80005a0:	e00a      	b.n	80005b8 <main+0x34>
+ 80005a4:	e00a      	b.n	80005bc <main+0x34>
   		HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
- 80005a2:	f44f 5180 	mov.w	r1, #4096	@ 0x1000
- 80005a6:	480f      	ldr	r0, [pc, #60]	@ (80005e4 <main+0x60>)
- 80005a8:	f001 f9d1 	bl	800194e <HAL_GPIO_TogglePin>
+ 80005a6:	f44f 5180 	mov.w	r1, #4096	@ 0x1000
+ 80005aa:	480e      	ldr	r0, [pc, #56]	@ (80005e4 <main+0x5c>)
+ 80005ac:	f001 f9cf 	bl	800194e <HAL_GPIO_TogglePin>
   	  	HAL_Delay(200);
- 80005ac:	20c8      	movs	r0, #200	@ 0xc8
- 80005ae:	f000 ff0f 	bl	80013d0 <HAL_Delay>
+ 80005b0:	20c8      	movs	r0, #200	@ 0xc8
+ 80005b2:	f000 ff0d 	bl	80013d0 <HAL_Delay>
   	  	timer++;
- 80005b2:	687b      	ldr	r3, [r7, #4]
- 80005b4:	3301      	adds	r3, #1
- 80005b6:	607b      	str	r3, [r7, #4]
+ 80005b6:	687b      	ldr	r3, [r7, #4]
+ 80005b8:	3301      	adds	r3, #1
+ 80005ba:	607b      	str	r3, [r7, #4]
   while(timer<25){
- 80005b8:	687b      	ldr	r3, [r7, #4]
- 80005ba:	2b18      	cmp	r3, #24
- 80005bc:	ddf1      	ble.n	80005a2 <main+0x1e>
+ 80005bc:	687b      	ldr	r3, [r7, #4]
+ 80005be:	2b18      	cmp	r3, #24
+ 80005c0:	ddf1      	ble.n	80005a6 <main+0x1e>
   }
 
   /* Check for hashing first */
-  SHA256_Update(&ctx, data, length_of_data);
- 80005be:	4b0a      	ldr	r3, [pc, #40]	@ (80005e8 <main+0x64>)
- 80005c0:	e9d3 2300 	ldrd	r2, r3, [r3]
- 80005c4:	4613      	mov	r3, r2
+  SHA256_Update(&ctx, (uint8_t *)APP_START_ADDRESS, app_size);
+ 80005c2:	4b09      	ldr	r3, [pc, #36]	@ (80005e8 <main+0x60>)
+ 80005c4:	681b      	ldr	r3, [r3, #0]
  80005c6:	461a      	mov	r2, r3
- 80005c8:	4908      	ldr	r1, [pc, #32]	@ (80005ec <main+0x68>)
- 80005ca:	4805      	ldr	r0, [pc, #20]	@ (80005e0 <main+0x5c>)
+ 80005c8:	4908      	ldr	r1, [pc, #32]	@ (80005ec <main+0x64>)
+ 80005ca:	4805      	ldr	r0, [pc, #20]	@ (80005e0 <main+0x58>)
  80005cc:	f000 fd5a 	bl	8001084 <SHA256_Update>
+
   SHA256_Final(&ctx, digest);
- 80005d0:	4907      	ldr	r1, [pc, #28]	@ (80005f0 <main+0x6c>)
- 80005d2:	4803      	ldr	r0, [pc, #12]	@ (80005e0 <main+0x5c>)
+ 80005d0:	4907      	ldr	r1, [pc, #28]	@ (80005f0 <main+0x68>)
+ 80005d2:	4803      	ldr	r0, [pc, #12]	@ (80005e0 <main+0x58>)
  80005d4:	f000 fe40 	bl	8001258 <SHA256_Final>
 
   // After blinking, hand over control to main application
@@ -569,11 +571,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
  80005dc:	bf00      	nop
- 80005de:	e7fd      	b.n	80005dc <main+0x58>
+ 80005de:	e7fd      	b.n	80005dc <main+0x54>
  80005e0:	200000b0 	.word	0x200000b0
  80005e4:	40020c00 	.word	0x40020c00
  80005e8:	20000000 	.word	0x20000000
- 80005ec:	08002c30 	.word	0x08002c30
+ 80005ec:	08008000 	.word	0x08008000
  80005f0:	2000008c 	.word	0x2000008c
 
 080005f4 <SystemClock_Config>:
@@ -1742,7 +1744,7 @@ LoopFillZerobss:
  8000bd6:	f001 fd85 	bl	80026e4 <__libc_init_array>
 /* Call the application's entry point.*/
   bl  main
- 8000bda:	f7ff fcd3 	bl	8000584 <main>
+ 8000bda:	f7ff fcd5 	bl	8000588 <main>
   bx  lr    
  8000bde:	4770      	bx	lr
   ldr   sp, =_estack     /* set stack pointer */
@@ -1750,9 +1752,9 @@ LoopFillZerobss:
   ldr r0, =_sdata
  8000be4:	20000000 	.word	0x20000000
   ldr r1, =_edata
- 8000be8:	20000070 	.word	0x20000070
+ 8000be8:	2000006c 	.word	0x2000006c
   ldr r2, =_sidata
- 8000bec:	08002e80 	.word	0x08002e80
+ 8000bec:	08002d50 	.word	0x08002d50
   ldr r2, =_sbss
  8000bf0:	20000070 	.word	0x20000070
   ldr r4, =_ebss
@@ -2185,7 +2187,7 @@ static void SHA256_Transform(SHA256_Context *ctx, const uint8_t block[64])
  8001000:	46bd      	mov	sp, r7
  8001002:	f85d 7b04 	ldr.w	r7, [sp], #4
  8001006:	4770      	bx	lr
- 8001008:	08002d70 	.word	0x08002d70
+ 8001008:	08002c40 	.word	0x08002c40
 
 0800100c <SHA256_Init>:
  * @param   ctx     Pointer to the SHA-256 context.
@@ -2727,9 +2729,9 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
  800137e:	3708      	adds	r7, #8
  8001380:	46bd      	mov	sp, r7
  8001382:	bd80      	pop	{r7, pc}
- 8001384:	20000008 	.word	0x20000008
- 8001388:	20000010 	.word	0x20000010
- 800138c:	2000000c 	.word	0x2000000c
+ 8001384:	20000004 	.word	0x20000004
+ 8001388:	2000000c 	.word	0x2000000c
+ 800138c:	20000008 	.word	0x20000008
 
 08001390 <HAL_IncTick>:
  * @note This function is declared as __weak to be overwritten in case of other 
@@ -2755,7 +2757,7 @@ __weak void HAL_IncTick(void)
  80013a8:	f85d 7b04 	ldr.w	r7, [sp], #4
  80013ac:	4770      	bx	lr
  80013ae:	bf00      	nop
- 80013b0:	20000010 	.word	0x20000010
+ 80013b0:	2000000c 	.word	0x2000000c
  80013b4:	20000124 	.word	0x20000124
 
 080013b8 <HAL_GetTick>:
@@ -2829,7 +2831,7 @@ __weak void HAL_Delay(uint32_t Delay)
  800140e:	46bd      	mov	sp, r7
  8001410:	bd80      	pop	{r7, pc}
  8001412:	bf00      	nop
- 8001414:	20000010 	.word	0x20000010
+ 8001414:	2000000c 	.word	0x2000000c
 
 08001418 <__NVIC_SetPriorityGrouping>:
            In case of a conflict between priority grouping and available
@@ -4976,9 +4978,9 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(const RCC_ClkInitTypeDef  *RCC_ClkInitStru
  800202a:	bf00      	nop
  800202c:	40023c00 	.word	0x40023c00
  8002030:	40023800 	.word	0x40023800
- 8002034:	08002d60 	.word	0x08002d60
- 8002038:	20000008 	.word	0x20000008
- 800203c:	2000000c 	.word	0x2000000c
+ 8002034:	08002c30 	.word	0x08002c30
+ 8002038:	20000004 	.word	0x20000004
+ 800203c:	20000008 	.word	0x20000008
 
 08002040 <HAL_RCC_GetSysClockFreq>:
   *
@@ -5286,9 +5288,9 @@ __weak uint32_t HAL_RCC_GetSysClockFreq(void)
  80022bc:	4803      	ldr	r0, [pc, #12]	@ (80022cc <stdio_exit_handler+0x14>)
  80022be:	f000 b869 	b.w	8002394 <_fwalk_sglue>
  80022c2:	bf00      	nop
- 80022c4:	20000014 	.word	0x20000014
+ 80022c4:	20000010 	.word	0x20000010
  80022c8:	08002a2d 	.word	0x08002a2d
- 80022cc:	20000024 	.word	0x20000024
+ 80022cc:	20000020 	.word	0x20000020
 
 080022d0 <cleanup_stdio>:
  80022d0:	6841      	ldr	r1, [r0, #4]
@@ -5485,7 +5487,7 @@ __weak uint32_t HAL_RCC_GetSysClockFreq(void)
  8002480:	6818      	ldr	r0, [r3, #0]
  8002482:	f7ff bfa5 	b.w	80023d0 <_puts_r>
  8002486:	bf00      	nop
- 8002488:	20000020 	.word	0x20000020
+ 8002488:	2000001c 	.word	0x2000001c
 
 0800248c <__sread>:
  800248c:	b510      	push	{r4, lr}
@@ -5677,7 +5679,7 @@ __weak uint32_t HAL_RCC_GetSysClockFreq(void)
  8002632:	e7f4      	b.n	800261e <__swsetup_r+0x8e>
  8002634:	2000      	movs	r0, #0
  8002636:	e7f7      	b.n	8002628 <__swsetup_r+0x98>
- 8002638:	20000020 	.word	0x20000020
+ 8002638:	2000001c 	.word	0x2000001c
 
 0800263c <memset>:
  800263c:	4402      	add	r2, r0
@@ -5763,7 +5765,7 @@ __weak uint32_t HAL_RCC_GetSysClockFreq(void)
  80026da:	6818      	ldr	r0, [r3, #0]
  80026dc:	4770      	bx	lr
  80026de:	bf00      	nop
- 80026e0:	20000020 	.word	0x20000020
+ 80026e0:	2000001c 	.word	0x2000001c
 
 080026e4 <__libc_init_array>:
  80026e4:	b570      	push	{r4, r5, r6, lr}
@@ -5791,10 +5793,10 @@ __weak uint32_t HAL_RCC_GetSysClockFreq(void)
  8002716:	4798      	blx	r3
  8002718:	3601      	adds	r6, #1
  800271a:	e7f2      	b.n	8002702 <__libc_init_array+0x1e>
- 800271c:	08002e78 	.word	0x08002e78
- 8002720:	08002e78 	.word	0x08002e78
- 8002724:	08002e78 	.word	0x08002e78
- 8002728:	08002e7c 	.word	0x08002e7c
+ 800271c:	08002d48 	.word	0x08002d48
+ 8002720:	08002d48 	.word	0x08002d48
+ 8002724:	08002d48 	.word	0x08002d48
+ 8002728:	08002d4c 	.word	0x08002d4c
 
 0800272c <__retarget_lock_init_recursive>:
  800272c:	4770      	bx	lr
