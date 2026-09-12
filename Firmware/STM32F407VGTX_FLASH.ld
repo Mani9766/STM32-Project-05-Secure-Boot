@@ -46,8 +46,9 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
   CCMRAM    (xrw)    : ORIGIN = 0x10000000,   LENGTH = 64K
-  RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 128K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 1024K
+  RAM       (xrw)    : ORIGIN = 0x20000000,   LENGTH = 128K
+  FLASH      (rx)    : ORIGIN = 0x08000000,   LENGTH = 32K
+  METADATA   (rx)    : ORIGIN = 0x08008000,   LENGTH = 16K
 }
 
 /* Sections */
@@ -135,6 +136,23 @@ SECTIONS
 
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
+  
+    /* Firmware metadata stored in dedicated Flash Sector 2
+   *
+   * Sector 2:
+   * Start : 0x08008000
+   * End   : 0x0800BFFF
+   * Size  : 16 KB
+   *
+   * This section is reserved for firmware metadata such as
+   * image size, SHA-256 hash, version, and other validation data.
+   */
+  .metadata :
+  {
+    . = ALIGN(4);
+    KEEP(*(.metadata))
+    . = ALIGN(4);
+  } >METADATA
 
   /* Initialized data sections into "RAM" Ram type memory */
   .data :

@@ -9,11 +9,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
   2 .rodata       00000184  08002bbc  08002bbc  00003bbc  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  3 .ARM.extab    00000000  08002d40  08002d40  0000406c  2**0
+  3 .ARM.extab    00000000  08002d40  08002d40  0000502c  2**0
                   CONTENTS, READONLY
   4 .ARM          00000008  08002d40  08002d40  00003d40  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  5 .preinit_array 00000000  08002d48  08002d48  0000406c  2**0
+  5 .preinit_array 00000000  08002d48  08002d48  0000502c  2**0
                   CONTENTS, ALLOC, LOAD, DATA
   6 .init_array   00000004  08002d48  08002d48  00003d48  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
@@ -21,33 +21,35 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
   8 .data         0000006c  20000000  08002d50  00004000  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  9 .ccmram       00000000  10000000  10000000  0000406c  2**0
+  9 .metadata     0000002c  08008000  08008000  00005000  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 10 .ccmram       00000000  10000000  10000000  0000502c  2**0
                   CONTENTS
- 10 .bss          00000204  20000070  20000070  00004070  2**3
+ 11 .bss          00000204  20000070  20000070  00005070  2**3
                   ALLOC
- 11 ._user_heap_stack 00000604  20000274  20000274  00004070  2**0
+ 12 ._user_heap_stack 00000604  20000274  20000274  00005070  2**0
                   ALLOC
- 12 .ARM.attributes 00000030  00000000  00000000  0000406c  2**0
+ 13 .ARM.attributes 00000030  00000000  00000000  0000502c  2**0
                   CONTENTS, READONLY
- 13 .debug_info   0000456e  00000000  00000000  0000409c  2**0
+ 14 .debug_info   00004678  00000000  00000000  0000505c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_abbrev 00001268  00000000  00000000  0000860a  2**0
+ 15 .debug_abbrev 000012fc  00000000  00000000  000096d4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_aranges 00000518  00000000  00000000  00009878  2**3
+ 16 .debug_aranges 00000530  00000000  00000000  0000a9d0  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_rnglists 000003a6  00000000  00000000  00009d90  2**0
+ 17 .debug_rnglists 000003a6  00000000  00000000  0000af00  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_macro  00020ad3  00000000  00000000  0000a136  2**0
+ 18 .debug_macro  00020b46  00000000  00000000  0000b2a6  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line   0000666c  00000000  00000000  0002ac09  2**0
+ 19 .debug_line   00006a7c  00000000  00000000  0002bdec  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    000c273e  00000000  00000000  00031275  2**0
+ 20 .debug_str    000c27cf  00000000  00000000  00032868  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .comment      00000043  00000000  00000000  000f39b3  2**0
+ 21 .comment      00000043  00000000  00000000  000f5037  2**0
                   CONTENTS, READONLY
- 21 .debug_frame  000018b4  00000000  00000000  000f39f8  2**2
+ 22 .debug_frame  000018b4  00000000  00000000  000f507c  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .debug_line_str 00000091  00000000  00000000  000f52ac  2**0
+ 23 .debug_line_str 00000091  00000000  00000000  000f6930  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -480,11 +482,11 @@ __STATIC_FORCEINLINE void __set_MSP(uint32_t topOfMainStack)
  8000562:	3710      	adds	r7, #16
  8000564:	46bd      	mov	sp, r7
  8000566:	bd80      	pop	{r7, pc}
- 8000568:	08008000 	.word	0x08008000
- 800056c:	08008004 	.word	0x08008004
+ 8000568:	0800c000 	.word	0x0800c000
+ 800056c:	0800c004 	.word	0x0800c004
  8000570:	20020000 	.word	0x20020000
  8000574:	08002bbc 	.word	0x08002bbc
- 8000578:	08009a0b 	.word	0x08009a0b
+ 8000578:	0800da0b 	.word	0x0800da0b
  800057c:	08002be0 	.word	0x08002be0
  8000580:	08002c04 	.word	0x08002c04
  8000584:	e000ed00 	.word	0xe000ed00
@@ -575,7 +577,7 @@ int main(void)
  80005e0:	200000b0 	.word	0x200000b0
  80005e4:	40020c00 	.word	0x40020c00
  80005e8:	20000000 	.word	0x20000000
- 80005ec:	08008000 	.word	0x08008000
+ 80005ec:	0800c000 	.word	0x0800c000
  80005f0:	2000008c 	.word	0x2000008c
 
 080005f4 <SystemClock_Config>:
