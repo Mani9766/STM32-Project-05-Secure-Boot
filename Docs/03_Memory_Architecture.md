@@ -11,22 +11,27 @@ The Bootloader executes first after MCU reset and is responsible for validating 
 The initial memory layout is planned as:
 
 ```text
-Flash Memory
-+-----------------------------+  Start of Flash
-|                             |
-|        BOOTLOADER           |
-|                             |
-+-----------------------------+
-|                             |
-|        APPLICATION          |
-|                             |
-+-----------------------------+
-|                             |
-|     Reserved / Metadata     |
-|                             |
-+-----------------------------+  End of Flash
+STM32F407 Internal Flash
+┌──────────────┬──────────────┬──────────────────────┐
+│   ADDRESS    │    SECTOR    │        ROLE          │
+├──────────────┼──────────────┼──────────────────────┤
+│ 0x08000000   │   Sector 0   │ Bootloader           │
+│ 0x08004000   │   Sector 1   │ Bootloader           │
+│ 0x08008000   │   Sector 2   │ Firmware Metadata    │
+│ 0x0800C000   │   Sector 3   │ Application          │
+│ 0x08010000   │   Sector 4   │ Application          │
+│ 0x08020000   │   Sector 5   │ Application          │
+│ 0x08040000   │   Sector 6   │ Application          │
+│ 0x08060000   │   Sector 7   │ Application          │
+├──────────────┼──────────────┼──────────────────────┤
+│ 0x08080000   │    End       │                      │
+└──────────────┴──────────────┴──────────────────────┘
 ```
-The exact addresses and sizes will be defined according to the target STM32 device and linker configuration.
+And the key boundaries are:
+
+- Bootloader  : 0x08000000 – 0x08007FFF
+- Metadata    : 0x08008000 – 0x0800BFFF
+- Application : 0x0800C000 – 0x0807FFFF
 
 ## 3. Bootloader Region
 
@@ -123,6 +128,12 @@ The following items will be finalized during implementation:
 - Update/recovery area
 ## 9. Implementation Status
 
-Status: Architecture Defined
+Status: Implemented and Verified
 
-The exact memory addresses and linker configurations will be documented after finalizing the target STM32 memory map.
+The memory addresses and linker configurations are as follows:
+- Bootloader start address: 0x08000000
+- Application start address: 0x0800C000
+- Application maximum region: 0x0800C000–0x0807FFFF
+- Metadata location: Sector 2, 0x08008000–0x0800BFFF
+- Signature/hash storage: Metadata region
+- Reserved Flash regions: Sector 2 for metadata
