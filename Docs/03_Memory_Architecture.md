@@ -23,8 +23,12 @@ STM32F407 Internal Flash
 │ 0x08020000   │   Sector 5   │ Application          │
 │ 0x08040000   │   Sector 6   │ Application          │
 │ 0x08060000   │   Sector 7   │ Application          │
+| 0x08080000   |   Sector 8   | Application          |
+│ 0x080A0000   │   Sector 9   │ Application          │
+│ 0x080C0000   │   Sector 10  │ Application          │
+| 0x080E0000   |   Sector 11  | Application          |
 ├──────────────┼──────────────┼──────────────────────┤
-│ 0x08080000   │    End       │                      │
+│ 0x080FFFFF   │    End       │                      │
 └──────────────┴──────────────┴──────────────────────┘
 ```
 And the key boundaries are:
