@@ -53,6 +53,8 @@ MEMORY
 /* Sections */
 SECTIONS
 {
+  /* Application image start address */
+  _app_image_start = ORIGIN(FLASH);
 
   /* The startup code into "FLASH" Rom type memory */
   .isr_vector :
@@ -170,6 +172,11 @@ SECTIONS
     _eccmram = .;       /* create a global symbol at ccmram end */
   } >CCMRAM AT> FLASH
 
+  /* End address of the application image in Flash.
+   * .ccmram is the last section with a Flash load address.
+   */
+  _app_image_end = LOADADDR(.ccmram) + SIZEOF(.ccmram);
+  
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);
   .bss :
