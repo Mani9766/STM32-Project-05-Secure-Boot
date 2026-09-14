@@ -17,12 +17,13 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <app_image_info.h>
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include <sha256.h>
+#include "sha256.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,14 +42,11 @@
 #define FLASH_SECTOR3_BASE_ADDRESS  0x0800C000U  // Sector 3 starting address for application
 #define SRAM_START_ADDRESS          0x20000000U
 #define SRAM_END_ADDRESS            0x20020000U
-#define APP_START_ADDRESS           0x0800C000U
-#define APP_END_ADDRESS             0x0800DA0CU    //calculated from linker file of Main_App.map
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint32_t app_size = APP_END_ADDRESS - APP_START_ADDRESS;
 uint8_t digest[SHA256_DIGEST_SIZE];
 
 SHA256_Context ctx;
@@ -68,9 +66,9 @@ void jump_to_application(void)
     uint32_t app_sp;
     uint32_t app_reset_handler;
 
-    app_sp = *(volatile uint32_t *)APP_START_ADDRESS;
+    app_sp = *(volatile uint32_t *)APP_IMAGE_START;
     app_reset_handler =
-        *(volatile uint32_t *)(APP_START_ADDRESS + 4U);
+        *(volatile uint32_t *)(APP_IMAGE_START + 4U);
 
     /* Validate Application Stack Pointer */
     if ((app_sp < SRAM_START_ADDRESS) ||
@@ -81,8 +79,8 @@ void jump_to_application(void)
     }
 
     /* Validate Reset Handler address */
-    if ((app_reset_handler < APP_START_ADDRESS) ||
-        (app_reset_handler >= APP_END_ADDRESS))
+    if ((app_reset_handler < APP_IMAGE_START) ||
+        (app_reset_handler >= APP_IMAGE_END))
     {
         printf("Invalid Application Reset Handler\r\n");
         return;
@@ -96,7 +94,7 @@ void jump_to_application(void)
     }
 
     /* Point Cortex-M to Application vector table */
-    SCB->VTOR = APP_START_ADDRESS;
+    SCB->VTOR = APP_IMAGE_START;
 
     /* Load Application stack pointer */
     __set_MSP(app_sp);
@@ -146,7 +144,7 @@ int main(void)
   }
 
   /* Check for hashing first */
-  SHA256_Update(&ctx, (uint8_t *)APP_START_ADDRESS, app_size);
+  SHA256_Update(&ctx, (uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
 
   SHA256_Final(&ctx, digest);
 

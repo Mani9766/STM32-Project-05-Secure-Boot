@@ -54,7 +54,8 @@ Main_App.list \
 
 
 # All Target
-all: main-build
+all:
+	+@$(MAKE) --no-print-directory main-build && $(MAKE) --no-print-directory post-build
 
 # Main-build Target
 main-build: Main_App.elf secondary-outputs
@@ -80,6 +81,10 @@ clean:
 	-$(RM) Main_App.elf Main_App.list Main_App.map default.size.stdout
 	-@echo ' '
 
+post-build:
+	C:/cygwin64/bin/bash.exe -lc "python '/cygdrive/d/Manisha Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Tools/generate_app_image_info.py' '/cygdrive/d/Manisha Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Application/Debug/Main_App.elf' '/cygdrive/d/Manisha Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Core/Inc/app_image_info.h'"
+	-@echo ' '
+
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
 
 fail-specified-linker-script-missing:
@@ -89,6 +94,6 @@ fail-specified-linker-script-missing:
 warn-no-linker-script-specified:
 	@echo 'Warning: No linker script specified. Check the linker settings in the build configuration.'
 
-.PHONY: all clean dependents main-build fail-specified-linker-script-missing warn-no-linker-script-specified
+.PHONY: all clean dependents main-build fail-specified-linker-script-missing warn-no-linker-script-specified post-build
 
 -include ../makefile.targets
