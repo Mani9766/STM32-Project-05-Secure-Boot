@@ -1,5 +1,0 @@
-../Crypto/Src/sha256.c:55:13:SHA256_Transform	328	static
-../Crypto/Src/sha256.c:136:6:SHA256_Init	16	static
-../Crypto/Src/sha256.c:160:6:SHA256_Update	48	static
-../Crypto/Src/sha256.c:183:6:SHA256_Padding	24	static
-../Crypto/Src/sha256.c:228:6:SHA256_Final	24	static

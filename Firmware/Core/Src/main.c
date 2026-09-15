@@ -23,7 +23,10 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <string.h>
 #include "sha256.h"
+#include "metadata.h"
+#include "flash_storage.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -147,6 +150,36 @@ int main(void)
   SHA256_Update(&ctx, (const uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
 
   SHA256_Final(&ctx, digest);
+
+  firmware_metadata_t metadata; //metadata is stored in RAM
+
+  metadata.magic = FIRMWARE_METADATA_MAGIC;
+  metadata.image_size = APP_IMAGE_SIZE;
+
+  memcpy(metadata.sha256,
+         digest,
+         SHA256_DIGEST_SIZE);
+
+  metadata.version = 1U;
+
+  HAL_StatusTypeDef status;
+
+  status = FlashStorage_EraseMetadataSector();
+
+  if (status != HAL_OK)
+  {
+      return 1;
+  }
+
+  status = FlashStorage_ProgramMetadata(&metadata);
+
+  if (status != HAL_OK)
+  {
+      return 1;
+  }
+
+  const firmware_metadata_t *stored_metadata =
+      (const firmware_metadata_t *)FLASH_SECTOR2_BASE_ADDRESS;
 
   // After blinking, hand over control to main application
   jump_to_application();

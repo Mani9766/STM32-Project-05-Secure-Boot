@@ -5,10 +5,12 @@
  *      Author: Manisha Daigavhane
  */
 
-#ifndef INC_METADATA_H_
-#define INC_METADATA_H_
+#ifndef METADATA_H
+#define METADATA_H
 
 #include <stdint.h>
+
+#define FIRMWARE_METADATA_MAGIC  0xDEADBEEFU
 
 typedef struct
 {
@@ -17,8 +19,5 @@ typedef struct
     uint8_t  sha256[32];
     uint32_t version;
 } firmware_metadata_t;
-
-extern const firmware_metadata_t firmware_metadata;
-
 
 #endif /* INC_METADATA_H_ */
