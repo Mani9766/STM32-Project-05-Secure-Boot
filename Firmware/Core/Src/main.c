@@ -144,7 +144,7 @@ int main(void)
   }
 
   /* Check for hashing first */
-  SHA256_Update(&ctx, (uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
+  SHA256_Update(&ctx, (const uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
 
   SHA256_Final(&ctx, digest);
 

@@ -287,9 +287,6 @@ typedef enum
 #include "stm32f4xx_hal.h"
 #endif /* USE_HAL_DRIVER */
 
-/* Change Base Address of Vector Table of Application code */
-#define USER_VECT_TAB_ADDRESS
-
 
 #ifdef __cplusplus
 }

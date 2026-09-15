@@ -551,7 +551,7 @@ int main(void)
   }
 
   /* Check for hashing first */
-  SHA256_Update(&ctx, (uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
+  SHA256_Update(&ctx, (const uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
  80005c2:	f641 220c 	movw	r2, #6668	@ 0x1a0c
  80005c6:	4908      	ldr	r1, [pc, #32]	@ (80005e8 <main+0x60>)
  80005c8:	4805      	ldr	r0, [pc, #20]	@ (80005e0 <main+0x58>)
