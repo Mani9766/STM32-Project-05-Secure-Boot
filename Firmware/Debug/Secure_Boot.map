@@ -2905,20 +2905,20 @@ LOAD C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
 LOAD C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libm.a
 LOAD C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v7e-m+fp/hard\libgcc.a
 
-.debug_info     0x00000000     0x4933
- .debug_info    0x00000000      0xb8e ./Core/Src/main.o
- .debug_info    0x00000b8e      0x27c ./Core/Src/stm32f4xx_hal_msp.o
- .debug_info    0x00000e0a      0x112 ./Core/Src/stm32f4xx_it.o
- .debug_info    0x00000f1c      0x6a3 ./Core/Src/syscalls.o
- .debug_info    0x000015bf      0x168 ./Core/Src/sysmem.o
- .debug_info    0x00001727      0x512 ./Core/Src/system_stm32f4xx.o
- .debug_info    0x00001c39       0x30 ./Core/Startup/startup_stm32f407vgtx.o
- .debug_info    0x00001c69      0x944 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o
- .debug_info    0x000025ad      0xd8c ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o
- .debug_info    0x00003339      0x6c3 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o
- .debug_info    0x000039fc      0x8c3 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o
- .debug_info    0x000042bf      0x35c ./Modules/Crypto/Src/sha256.o
- .debug_info    0x0000461b      0x318 ./Modules/Flash/Src/flash_storage.o
+.debug_info     0x00000000     0x4924
+ .debug_info    0x00000000      0xb7f ./Core/Src/main.o
+ .debug_info    0x00000b7f      0x27c ./Core/Src/stm32f4xx_hal_msp.o
+ .debug_info    0x00000dfb      0x112 ./Core/Src/stm32f4xx_it.o
+ .debug_info    0x00000f0d      0x6a3 ./Core/Src/syscalls.o
+ .debug_info    0x000015b0      0x168 ./Core/Src/sysmem.o
+ .debug_info    0x00001718      0x512 ./Core/Src/system_stm32f4xx.o
+ .debug_info    0x00001c2a       0x30 ./Core/Startup/startup_stm32f407vgtx.o
+ .debug_info    0x00001c5a      0x944 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o
+ .debug_info    0x0000259e      0xd8c ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o
+ .debug_info    0x0000332a      0x6c3 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o
+ .debug_info    0x000039ed      0x8c3 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o
+ .debug_info    0x000042b0      0x35c ./Modules/Crypto/Src/sha256.o
+ .debug_info    0x0000460c      0x318 ./Modules/Flash/Src/flash_storage.o
 
 .debug_abbrev   0x00000000     0x13f0
  .debug_abbrev  0x00000000      0x28f ./Core/Src/main.o
@@ -3113,7 +3113,7 @@ LOAD C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
 
 .debug_str      0x00000000    0xc2a36
  .debug_str     0x00000000    0xc2a36 ./Core/Src/main.o
-                              0xbf4de (size before relaxing)
+                              0xbf4d5 (size before relaxing)
  .debug_str     0x000c2a36    0xbb723 ./Core/Src/stm32f4xx_hal_msp.o
  .debug_str     0x000c2a36    0xbb68c ./Core/Src/stm32f4xx_it.o
  .debug_str     0x000c2a36     0x9a0d ./Core/Src/syscalls.o

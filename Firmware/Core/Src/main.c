@@ -151,7 +151,7 @@ int main(void)
 
   SHA256_Final(&ctx, digest);
 
-  firmware_metadata_t metadata, stored_metadata; //metadata is data stored in RAM, stored_metadata copy data from FALSH to RAM
+  firmware_metadata_t stored_metadata; //stored_metadata copy data from FALSH to RAM
   HAL_StatusTypeDef status;
 
   status = FlashStorage_ReadMetadata(&stored_metadata);
@@ -171,7 +171,7 @@ int main(void)
   {
       return 1;
   }
-
+//  firmware_metadata_t metadata;
 //  metadata.magic = FIRMWARE_METADATA_MAGIC;
 //  metadata.image_size = APP_IMAGE_SIZE;
 //

@@ -31,25 +31,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  13 .ARM.attributes 00000030  00000000  00000000  00004068  2**0
                   CONTENTS, READONLY
- 14 .debug_info   00004933  00000000  00000000  00004098  2**0
+ 14 .debug_info   00004924  00000000  00000000  00004098  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_abbrev 000013f0  00000000  00000000  000089cb  2**0
+ 15 .debug_abbrev 000013f0  00000000  00000000  000089bc  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_aranges 00000548  00000000  00000000  00009dc0  2**3
+ 16 .debug_aranges 00000548  00000000  00000000  00009db0  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_rnglists 000003c6  00000000  00000000  0000a308  2**0
+ 17 .debug_rnglists 000003c6  00000000  00000000  0000a2f8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_macro  00020e2e  00000000  00000000  0000a6ce  2**0
+ 18 .debug_macro  00020e2e  00000000  00000000  0000a6be  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_line   000071d1  00000000  00000000  0002b4fc  2**0
+ 19 .debug_line   000071d1  00000000  00000000  0002b4ec  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_str    000c2a36  00000000  00000000  000326cd  2**0
+ 20 .debug_str    000c2a36  00000000  00000000  000326bd  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .comment      00000043  00000000  00000000  000f5103  2**0
+ 21 .comment      00000043  00000000  00000000  000f50f3  2**0
                   CONTENTS, READONLY
- 22 .debug_frame  00001988  00000000  00000000  000f5148  2**2
+ 22 .debug_frame  00001988  00000000  00000000  000f5138  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 23 .debug_line_str 00000091  00000000  00000000  000f6ad0  2**0
+ 23 .debug_line_str 00000091  00000000  00000000  000f6ac0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -486,7 +486,7 @@ __STATIC_FORCEINLINE void __set_MSP(uint32_t topOfMainStack)
  800056c:	0800c004 	.word	0x0800c004
  8000570:	20020000 	.word	0x20020000
  8000574:	08002c58 	.word	0x08002c58
- 8000578:	0800da0b 	.word	0x0800da0b
+ 8000578:	0800d9e7 	.word	0x0800d9e7
  800057c:	08002c7c 	.word	0x08002c7c
  8000580:	08002ca0 	.word	0x08002ca0
  8000584:	e000ed00 	.word	0xe000ed00
@@ -499,13 +499,13 @@ __STATIC_FORCEINLINE void __set_MSP(uint32_t topOfMainStack)
 int main(void)
 {
  8000588:	b580      	push	{r7, lr}
- 800058a:	b098      	sub	sp, #96	@ 0x60
+ 800058a:	b08e      	sub	sp, #56	@ 0x38
  800058c:	af00      	add	r7, sp, #0
 
   /* USER CODE BEGIN 1 */
   int timer = 0;
  800058e:	2300      	movs	r3, #0
- 8000590:	65fb      	str	r3, [r7, #92]	@ 0x5c
+ 8000590:	637b      	str	r3, [r7, #52]	@ 0x34
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -541,18 +541,18 @@ int main(void)
  80005b0:	20c8      	movs	r0, #200	@ 0xc8
  80005b2:	f000 fbaf 	bl	8000d14 <HAL_Delay>
   	  	timer++;
- 80005b6:	6dfb      	ldr	r3, [r7, #92]	@ 0x5c
+ 80005b6:	6b7b      	ldr	r3, [r7, #52]	@ 0x34
  80005b8:	3301      	adds	r3, #1
- 80005ba:	65fb      	str	r3, [r7, #92]	@ 0x5c
+ 80005ba:	637b      	str	r3, [r7, #52]	@ 0x34
   while(timer<25){
- 80005bc:	6dfb      	ldr	r3, [r7, #92]	@ 0x5c
+ 80005bc:	6b7b      	ldr	r3, [r7, #52]	@ 0x34
  80005be:	2b18      	cmp	r3, #24
  80005c0:	ddf1      	ble.n	80005a6 <main+0x1e>
   }
 
   /* Check for hashing first */
   SHA256_Update(&ctx, (const uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
- 80005c2:	f641 220c 	movw	r2, #6668	@ 0x1a0c
+ 80005c2:	f641 12e8 	movw	r2, #6632	@ 0x19e8
  80005c6:	4916      	ldr	r1, [pc, #88]	@ (8000620 <main+0x98>)
  80005c8:	4813      	ldr	r0, [pc, #76]	@ (8000618 <main+0x90>)
  80005ca:	f001 fd25 	bl	8002018 <SHA256_Update>
@@ -562,18 +562,18 @@ int main(void)
  80005d0:	4811      	ldr	r0, [pc, #68]	@ (8000618 <main+0x90>)
  80005d2:	f001 fe0b 	bl	80021ec <SHA256_Final>
 
-  firmware_metadata_t metadata, stored_metadata; //metadata is data stored in RAM, stored_metadata copy data from FALSH to RAM
+  firmware_metadata_t stored_metadata; //stored_metadata copy data from FALSH to RAM
   HAL_StatusTypeDef status;
 
   status = FlashStorage_ReadMetadata(&stored_metadata);
- 80005d6:	463b      	mov	r3, r7
+ 80005d6:	1d3b      	adds	r3, r7, #4
  80005d8:	4618      	mov	r0, r3
  80005da:	f001 fe51 	bl	8002280 <FlashStorage_ReadMetadata>
  80005de:	4603      	mov	r3, r0
- 80005e0:	f887 305b 	strb.w	r3, [r7, #91]	@ 0x5b
+ 80005e0:	f887 3033 	strb.w	r3, [r7, #51]	@ 0x33
 
   if (status != HAL_OK)
- 80005e4:	f897 305b 	ldrb.w	r3, [r7, #91]	@ 0x5b
+ 80005e4:	f897 3033 	ldrb.w	r3, [r7, #51]	@ 0x33
  80005e8:	2b00      	cmp	r3, #0
  80005ea:	d001      	beq.n	80005f0 <main+0x68>
   {
@@ -583,7 +583,7 @@ int main(void)
   }
 
   if (memcmp(digest,
- 80005f0:	463b      	mov	r3, r7
+ 80005f0:	1d3b      	adds	r3, r7, #4
  80005f2:	3308      	adds	r3, #8
  80005f4:	2220      	movs	r2, #32
  80005f6:	4619      	mov	r1, r3
@@ -618,7 +618,7 @@ int main(void)
   /* USER CODE END 3 */
 }
  8000610:	4618      	mov	r0, r3
- 8000612:	3760      	adds	r7, #96	@ 0x60
+ 8000612:	3738      	adds	r7, #56	@ 0x38
  8000614:	46bd      	mov	sp, r7
  8000616:	bd80      	pop	{r7, pc}
  8000618:	200000a8 	.word	0x200000a8

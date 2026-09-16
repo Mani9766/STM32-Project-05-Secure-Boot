@@ -65,7 +65,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  static int timer = 0;
 
   /* USER CODE END 1 */
 
@@ -96,15 +95,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	if(timer<25){
-		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
-		HAL_Delay(200);
-		timer++;
-	}
-	else{
-		HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
-	  	HAL_Delay(500);
-	}
+	HAL_GPIO_TogglePin(GPIOD, LD3_Pin);
+	HAL_Delay(500);
 
     /* USER CODE BEGIN 3 */
   }
