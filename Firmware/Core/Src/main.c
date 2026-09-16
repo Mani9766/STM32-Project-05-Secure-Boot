@@ -151,35 +151,38 @@ int main(void)
 
   SHA256_Final(&ctx, digest);
 
-  firmware_metadata_t metadata; //metadata is stored in RAM
-
-  metadata.magic = FIRMWARE_METADATA_MAGIC;
-  metadata.image_size = APP_IMAGE_SIZE;
-
-  memcpy(metadata.sha256,
-         digest,
-         SHA256_DIGEST_SIZE);
-
-  metadata.version = 1U;
-
+  firmware_metadata_t metadata, stored_metadata; //metadata is data stored in RAM, stored_metadata copy data from FALSH to RAM
   HAL_StatusTypeDef status;
 
-  status = FlashStorage_EraseMetadataSector();
+  status = FlashStorage_ReadMetadata(&stored_metadata);
 
   if (status != HAL_OK)
   {
       return 1;
   }
 
-  status = FlashStorage_ProgramMetadata(&metadata);
+//  metadata.magic = FIRMWARE_METADATA_MAGIC;
+//  metadata.image_size = APP_IMAGE_SIZE;
+//
+//  memcpy(metadata.sha256,
+//         digest,
+//         SHA256_DIGEST_SIZE);
+//
+//  metadata.version = 1U;
 
-  if (status != HAL_OK)
-  {
-      return 1;
-  }
-
-  const firmware_metadata_t *stored_metadata =
-      (const firmware_metadata_t *)FLASH_SECTOR2_BASE_ADDRESS;
+//  status = FlashStorage_EraseMetadataSector();
+//
+//  if (status != HAL_OK)
+//  {
+//      return 1;
+//  }
+//
+//  status = FlashStorage_ProgramMetadata(&metadata);
+//
+//  if (status != HAL_OK)
+//  {
+//      return 1;
+//  }
 
   // After blinking, hand over control to main application
   jump_to_application();

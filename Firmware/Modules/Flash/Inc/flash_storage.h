@@ -15,4 +15,6 @@ HAL_StatusTypeDef FlashStorage_EraseMetadataSector(void);
 
 HAL_StatusTypeDef FlashStorage_ProgramMetadata(const firmware_metadata_t *metadata);
 
+HAL_StatusTypeDef FlashStorage_ReadMetadata(firmware_metadata_t *metadata);
+
 #endif /* FLASH_STORAGE_H_ */

@@ -65,3 +65,18 @@ HAL_StatusTypeDef FlashStorage_ProgramMetadata(
 
     return HAL_OK;
 }
+
+HAL_StatusTypeDef FlashStorage_ReadMetadata(
+    firmware_metadata_t *metadata)
+{
+    if (metadata == NULL)
+    {
+        return HAL_ERROR;
+    }
+
+    memcpy(metadata,
+           (const void *)FLASH_METADATA_ADDRESS,
+           sizeof(firmware_metadata_t));
+
+    return HAL_OK;
+}

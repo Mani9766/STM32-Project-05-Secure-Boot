@@ -1,2 +1,3 @@
 ../Modules/Flash/Src/flash_storage.c:15:19:FlashStorage_EraseMetadataSector	1
 ../Modules/Flash/Src/flash_storage.c:35:19:FlashStorage_ProgramMetadata	3
+../Modules/Flash/Src/flash_storage.c:69:19:FlashStorage_ReadMetadata	2
