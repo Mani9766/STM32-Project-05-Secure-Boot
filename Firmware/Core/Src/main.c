@@ -161,6 +161,17 @@ int main(void)
       return 1;
   }
 
+  if (memcmp(digest,
+             stored_metadata.sha256,
+             SHA256_DIGEST_SIZE) == 0)
+  {
+      jump_to_application();
+  }
+  else
+  {
+      return 1;
+  }
+
 //  metadata.magic = FIRMWARE_METADATA_MAGIC;
 //  metadata.image_size = APP_IMAGE_SIZE;
 //
@@ -185,7 +196,7 @@ int main(void)
 //  }
 
   // After blinking, hand over control to main application
-  jump_to_application();
+//  jump_to_application();
   /* USER CODE END 2 */
 
   /* Infinite loop */
