@@ -45,6 +45,8 @@
 #define FLASH_SECTOR3_BASE_ADDRESS  0x0800C000U  // Sector 3 starting address for application
 #define SRAM_START_ADDRESS          0x20000000U
 #define SRAM_END_ADDRESS            0x20020000U
+#define APP_REGION_END              0x0807FFFFU
+#define APP_REGION_SIZE             (APP_REGION_END - APP_IMAGE_START + 1U)
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -53,6 +55,7 @@
 uint8_t digest[SHA256_DIGEST_SIZE];
 
 SHA256_Context ctx;
+uint32_t image_end_address = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -83,7 +86,7 @@ void jump_to_application(void)
 
     /* Validate Reset Handler address */
     if ((app_reset_handler < APP_IMAGE_START) ||
-        (app_reset_handler >= APP_IMAGE_END))
+        (app_reset_handler >= image_end_address))
     {
         printf("Invalid Application Reset Handler\r\n");
         return;
@@ -146,11 +149,6 @@ int main(void)
   	  	timer++;
   }
 
-  /* Check for hashing first */
-  SHA256_Update(&ctx, (const uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
-
-  SHA256_Final(&ctx, digest);
-
   firmware_metadata_t stored_metadata; //stored_metadata copy data from FALSH to RAM
   HAL_StatusTypeDef status;
 
@@ -160,6 +158,27 @@ int main(void)
   {
       return 1;
   }
+
+  if (stored_metadata.magic != FIRMWARE_METADATA_MAGIC)
+  {
+      printf("Invalid Firmware Metadata\r\n");
+      return 1;
+  }
+
+  if ((stored_metadata.image_size == 0U) ||
+      (stored_metadata.image_size > APP_REGION_SIZE))
+  {
+      printf("Invalid Application Image Size\r\n");
+      return 1;
+  }
+
+  image_end_address =
+      APP_IMAGE_START + stored_metadata.image_size - 1U;
+
+  /* Check for hashing first */
+  SHA256_Update(&ctx, (const uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
+
+  SHA256_Final(&ctx, digest);
 
   if (memcmp(digest,
              stored_metadata.sha256,
@@ -180,7 +199,7 @@ int main(void)
 //         SHA256_DIGEST_SIZE);
 //
 //  metadata.version = 1U;
-
+//
 //  status = FlashStorage_EraseMetadataSector();
 //
 //  if (status != HAL_OK)
@@ -194,8 +213,8 @@ int main(void)
 //  {
 //      return 1;
 //  }
-
-  // After blinking, hand over control to main application
+//
+////   After blinking, hand over control to main application
 //  jump_to_application();
   /* USER CODE END 2 */
 
