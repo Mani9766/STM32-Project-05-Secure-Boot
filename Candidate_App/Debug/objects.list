@@ -19,3 +19,5 @@
 "./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o"
 "./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.o"
 "./Modules/Crypto/Src/sha256.o"
+"./Modules/Flash/Src/flash_storage.o"
+"./Modules/Metadata/Src/metadata.o"

@@ -1,4 +1,5 @@
-Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
+Modules/Flash/Src/flash_storage.o: ../Modules/Flash/Src/flash_storage.c \
+ D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Flash/Inc/flash_storage.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
@@ -24,10 +25,9 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h \
- D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Crypto/Inc/sha256.h \
  D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Metadata/Inc/metadata.h \
- D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Flash/Inc/flash_storage.h
-../Core/Inc/main.h:
+ D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Crypto/Inc/sha256.h
+D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Flash/Inc/flash_storage.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h:
@@ -53,6 +53,5 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h:
-D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Crypto/Inc/sha256.h:
 D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Metadata/Inc/metadata.h:
-D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Flash/Inc/flash_storage.h:
+D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Candidate_App/Modules/Crypto/Inc/sha256.h:

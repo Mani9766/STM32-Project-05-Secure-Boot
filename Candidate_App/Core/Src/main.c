@@ -25,6 +25,8 @@
 #include <string.h>
 #include <stdint.h>
 #include "sha256.h"
+#include "metadata.h"
+#include "flash_storage.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -75,6 +77,8 @@ int main(void)
   uintptr_t candidate_start = (uintptr_t)&_candidate_image_start;
   uintptr_t candidate_end   = (uintptr_t)&_candidate_image_end;
   uint32_t candidate_size   = (uint32_t)(candidate_end - candidate_start);
+  HAL_StatusTypeDef status;
+  firmware_metadata_t metadata;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -99,6 +103,31 @@ int main(void)
   SHA256_Init(&ctx);
   SHA256_Update(&ctx, (const uint8_t *)candidate_start, candidate_size);
   SHA256_Final(&ctx, digest);
+
+  metadata.magic = FIRMWARE_METADATA_MAGIC;
+  metadata.image_size = candidate_size;
+
+  memcpy(metadata.sha256,
+         digest,
+         SHA256_DIGEST_SIZE);
+
+  metadata.version = 1U;
+  metadata.update_state = CANDIDATE_STATE_PENDING_VALIDATION;
+
+  status = FlashStorage_EraseCandidateMetadataSector();
+
+  if (status != HAL_OK)
+  {
+      return 1;
+  }
+
+  status = FlashStorage_ProgramMetadata(&metadata);
+
+  if (status != HAL_OK)
+  {
+      return 1;
+  }
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
