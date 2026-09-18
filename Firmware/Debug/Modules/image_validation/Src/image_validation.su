@@ -1,0 +1,2 @@
+../Modules/image_validation/Src/image_validation.c:13:6:ImageValidation_CalculateSHA256	136	static
+../Modules/image_validation/Src/image_validation.c:35:6:ImageValidation_VerifySHA256	16	static

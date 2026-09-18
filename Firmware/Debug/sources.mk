@@ -28,4 +28,5 @@ Drivers/STM32F4xx_HAL_Driver/Src \
 Modules/Crypto/Src \
 Modules/Flash/Src \
 Modules/Metadata/Src \
+Modules/image_validation/Src \
 

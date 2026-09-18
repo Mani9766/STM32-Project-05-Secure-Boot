@@ -26,7 +26,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/app_image_info.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h \
  D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Modules/Crypto/Inc/sha256.h \
  D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Modules/Metadata/Inc/metadata.h \
- D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Modules/Flash/Inc/flash_storage.h
+ D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Modules/Flash/Inc/flash_storage.h \
+ D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Modules/image_validation/Inc/image_validation.h
 ../Core/Inc/app_image_info.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -57,3 +58,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/app_image_info.h \
 D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Modules/Crypto/Inc/sha256.h:
 D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Modules/Metadata/Inc/metadata.h:
 D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Modules/Flash/Inc/flash_storage.h:
+D:/Manisha\ Daigavhane/software/workspace/Github_Repositories/STM32-Project-05-Secure-Boot/Firmware/Modules/image_validation/Inc/image_validation.h:

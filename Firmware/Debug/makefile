@@ -9,6 +9,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include Modules/image_validation/Src/subdir.mk
 -include Modules/Metadata/Src/subdir.mk
 -include Modules/Flash/Src/subdir.mk
 -include Modules/Crypto/Src/subdir.mk

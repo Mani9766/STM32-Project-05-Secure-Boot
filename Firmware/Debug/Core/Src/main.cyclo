@@ -1,5 +1,7 @@
-../Core/Src/main.c:70:6:jump_to_application	6
-../Core/Src/main.c:120:5:main	7
-../Core/Src/main.c:236:6:SystemClock_Config	3
-../Core/Src/main.c:283:13:MX_GPIO_Init	1
-../Core/Src/main.c:430:6:Error_Handler	1
+../Core/Src/main.c:81:5:main	13
+../Core/Src/main.c:293:6:SystemClock_Config	3
+../Core/Src/main.c:340:13:MX_GPIO_Init	1
+../Core/Src/main.c:480:13:JumpToApplication	6
+../Core/Src/main.c:534:26:UpdateActiveMetadata	3
+../Core/Src/main.c:574:13:Bootloader_FailSafe	1
+../Core/Src/main.c:590:6:Error_Handler	1

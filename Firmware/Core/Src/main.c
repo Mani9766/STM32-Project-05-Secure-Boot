@@ -24,9 +24,11 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "sha256.h"
 #include "metadata.h"
 #include "flash_storage.h"
+#include "image_validation.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,76 +43,35 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define FLASH_SECTOR2_BASE_ADDRESS  0x08008000U  // Sector 2 for storing metadata
-#define FLASH_SECTOR3_BASE_ADDRESS  0x0800C000U  // Sector 3 starting address for application
-#define SRAM_START_ADDRESS          0x20000000U
-#define SRAM_END_ADDRESS            0x20020000U
-#define APP_REGION_END              0x0807FFFFU
-#define APP_REGION_SIZE             (APP_REGION_END - APP_IMAGE_START + 1U)
+#define SRAM_START_ADDRESS                 0x20000000U
+#define SRAM_END_ADDRESS                   0x20020000U
+
+#define CANDIDATE_IMAGE_START              0x08010000U
+#define CANDIDATE_IMAGE_REGION_END         0x08020000U
+
+#define FLASH_ACTIVE_METADATA_ADDRESS      0x08008000U
+#define FLASH_CANDIDATE_METADATA_ADDRESS   0x0800C000U
+
+#define ACTIVE_IMAGE_REGION_END  0x08100000U
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t digest[SHA256_DIGEST_SIZE];
-
-SHA256_Context ctx;
-uint32_t image_end_address = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-
+static void JumpToApplication(uint32_t image_start, uint32_t image_end);
+static HAL_StatusTypeDef UpdateActiveMetadata(
+    const uint8_t *digest) __attribute__((unused));
+static void Bootloader_FailSafe(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void jump_to_application(void)
-{
-    uint32_t app_sp;
-    uint32_t app_reset_handler;
-
-    app_sp = *(volatile uint32_t *)APP_IMAGE_START;
-    app_reset_handler =
-        *(volatile uint32_t *)(APP_IMAGE_START + 4U);
-
-    /* Validate Application Stack Pointer */
-    if ((app_sp < SRAM_START_ADDRESS) ||
-        (app_sp > SRAM_END_ADDRESS))
-    {
-        printf("Invalid Application Stack Pointer\r\n");
-        return;
-    }
-
-    /* Validate Reset Handler address */
-    if ((app_reset_handler < APP_IMAGE_START) ||
-        (app_reset_handler >= image_end_address))
-    {
-        printf("Invalid Application Reset Handler\r\n");
-        return;
-    }
-
-    /* Reset Handler must be Thumb code */
-    if ((app_reset_handler & 1U) == 0U)
-    {
-        printf("Invalid Reset Handler: Thumb bit not set\r\n");
-        return;
-    }
-
-    /* Point Cortex-M to Application vector table */
-    SCB->VTOR = APP_IMAGE_START;
-
-    /* Load Application stack pointer */
-    __set_MSP(app_sp);
-
-    /* Jump to Application Reset Handler */
-    void (*reset_handler)(void) =
-        (void (*)(void))app_reset_handler;
-
-    reset_handler();
-}
 /* USER CODE END 0 */
 
 /**
@@ -121,7 +82,16 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  int timer = 0;
+  firmware_metadata_t active_metadata;
+  firmware_metadata_t candidate_metadata;
+
+  HAL_StatusTypeDef status;
+
+  bool candidate_metadata_valid = false;
+
+  uint8_t candidate_digest[SHA256_DIGEST_SIZE];
+  uint32_t candidate_image_end;
+  uint8_t active_digest[SHA256_DIGEST_SIZE];
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -137,85 +107,172 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  SHA256_Init(&ctx);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-  while(timer<25){
-  		HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
-  	  	HAL_Delay(200);
-  	  	timer++;
-  }
 
-  firmware_metadata_t stored_metadata; //stored_metadata copy data from FALSH to RAM
-  HAL_StatusTypeDef status;
-
-  status = FlashStorage_ReadMetadata(&stored_metadata);
+  /* Read Active Image Metadata */
+  status = FlashStorage_ReadMetadata(
+      FLASH_ACTIVE_METADATA_ADDRESS,
+      &active_metadata);
 
   if (status != HAL_OK)
   {
-      return 1;
+      printf("Failed to read active metadata\r\n");
+      Bootloader_FailSafe();
   }
 
-  if (stored_metadata.magic != FIRMWARE_METADATA_MAGIC)
+  if (!Metadata_Validate(&active_metadata,
+                         APP_IMAGE_START,
+                         ACTIVE_IMAGE_REGION_END))
   {
-      printf("Invalid Firmware Metadata\r\n");
-      return 1;
+      printf("Invalid Active Image Metadata\r\n");
+      Bootloader_FailSafe();
   }
 
-  if ((stored_metadata.image_size == 0U) ||
-      (stored_metadata.image_size > APP_REGION_SIZE))
+  /* Read Candidate Image Metadata */
+  status = FlashStorage_ReadMetadata(
+      FLASH_CANDIDATE_METADATA_ADDRESS,
+      &candidate_metadata);
+
+  if (status != HAL_OK)
   {
-      printf("Invalid Application Image Size\r\n");
-      return 1;
-  }
-
-  image_end_address =
-      APP_IMAGE_START + stored_metadata.image_size - 1U;
-
-  /* Check for hashing first */
-  SHA256_Update(&ctx, (const uint8_t *)APP_IMAGE_START, APP_IMAGE_SIZE);
-
-  SHA256_Final(&ctx, digest);
-
-  if (memcmp(digest,
-             stored_metadata.sha256,
-             SHA256_DIGEST_SIZE) == 0)
-  {
-      jump_to_application();
+      printf("Failed to read candidate metadata\r\n");
+      candidate_metadata_valid = false;
   }
   else
   {
-      return 1;
+      candidate_metadata_valid =
+          Metadata_Validate(&candidate_metadata,
+                            CANDIDATE_IMAGE_START,
+                            CANDIDATE_IMAGE_REGION_END);
+
+      if (!candidate_metadata_valid)
+      {
+          printf("Invalid Candidate Image Metadata\r\n");
+      }
   }
-//  firmware_metadata_t metadata;
-//  metadata.magic = FIRMWARE_METADATA_MAGIC;
-//  metadata.image_size = APP_IMAGE_SIZE;
-//
-//  memcpy(metadata.sha256,
-//         digest,
-//         SHA256_DIGEST_SIZE);
-//
-//  metadata.version = 1U;
-//
-//  status = FlashStorage_EraseMetadataSector();
-//
-//  if (status != HAL_OK)
-//  {
-//      return 1;
-//  }
-//
-//  status = FlashStorage_ProgramMetadata(&metadata);
-//
-//  if (status != HAL_OK)
-//  {
-//      return 1;
-//  }
-//
-////   After blinking, hand over control to main application
-//  jump_to_application();
+
+
+  /* Handle Candidate Image */
+  if (candidate_metadata_valid &&
+      Metadata_IsCandidateNewer(&active_metadata,
+                                &candidate_metadata))
+  {
+      printf("New candidate firmware detected\r\n");
+
+      candidate_image_end =
+          CANDIDATE_IMAGE_START +
+          candidate_metadata.image_size;
+
+      /*
+       * Verify candidate image on every boot attempt.
+       */
+      printf("Calculating candidate SHA-256\r\n");
+
+      ImageValidation_CalculateSHA256(
+          CANDIDATE_IMAGE_START,
+          candidate_metadata.image_size,
+          candidate_digest);
+
+      if (ImageValidation_VerifySHA256(
+              candidate_digest,
+              candidate_metadata.sha256))
+      {
+          printf("Candidate SHA-256 matched\r\n");
+
+          /*
+           * Candidate was booted previously but did not
+           * reach application confirmation.
+           */
+          if (candidate_metadata.update_state ==
+              CANDIDATE_STATE_BOOT_PENDING)
+          {
+              printf("Candidate was not confirmed\r\n");
+              printf("Rolling back to active image\r\n");
+
+              candidate_metadata.update_state =
+                  CANDIDATE_STATE_ROLLBACK;
+
+              /*
+               * Persist candidate_metadata here.
+               */
+          }
+          else if ((candidate_metadata.update_state ==
+                    CANDIDATE_STATE_PENDING_VALIDATION) ||
+                   (candidate_metadata.update_state ==
+                    CANDIDATE_STATE_VALIDATED))
+          {
+              /*
+               * Candidate passed integrity verification and
+               * is now being attempted for the first time.
+               */
+              candidate_metadata.update_state =
+                  CANDIDATE_STATE_BOOT_PENDING;
+
+              /*
+               * IMPORTANT:
+               * Persist BOOT_PENDING before jumping.
+               */
+
+              printf("Candidate set to BOOT_PENDING\r\n");
+              printf("Booting candidate image\r\n");
+
+              JumpToApplication(
+                  CANDIDATE_IMAGE_START,
+                  candidate_image_end);
+          }
+          else if (candidate_metadata.update_state ==
+                   CANDIDATE_STATE_CONFIRMED)
+          {
+              /*
+               * Application previously confirmed successful boot.
+               */
+              printf("Candidate image confirmed\r\n");
+              printf("Booting confirmed candidate image\r\n");
+
+              JumpToApplication(
+                  CANDIDATE_IMAGE_START,
+                  candidate_image_end);
+          }
+      }
+      else
+      {
+          printf("Candidate SHA-256 mismatch\r\n");
+
+          candidate_metadata.update_state =
+              CANDIDATE_STATE_INVALID;
+
+          /*
+           * Persist candidate_metadata here.
+           */
+      }
+  }
+
+  /* Verify Active Image and use it as fallback */
+  {
+      printf("Calculating active SHA-256\r\n");
+
+      ImageValidation_CalculateSHA256(
+          APP_IMAGE_START,
+          APP_IMAGE_SIZE,
+          active_digest);
+
+      if (ImageValidation_VerifySHA256(
+              active_digest,
+              active_metadata.sha256))
+      {
+          printf("Active SHA-256 matched\r\n");
+
+          JumpToApplication(
+              APP_IMAGE_START,
+              APP_IMAGE_END);
+      }
+
+      printf("Active SHA-256 mismatch\r\n");
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -420,7 +477,110 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static void JumpToApplication(uint32_t image_start,
+                              uint32_t image_end)
+{
+    uint32_t app_sp;
+    uint32_t app_reset_handler;
 
+    /* Read initial stack pointer from image vector table */
+    app_sp = *(volatile uint32_t *)image_start;
+
+    /* Read Reset_Handler address from image vector table */
+    app_reset_handler =
+        *(volatile uint32_t *)(image_start + 4U);
+
+    /* Validate Application Stack Pointer */
+    if ((app_sp < SRAM_START_ADDRESS) ||
+        (app_sp > SRAM_END_ADDRESS))
+    {
+        printf("Invalid Application Stack Pointer\r\n");
+        return;
+    }
+
+    /* Validate Reset_Handler address */
+    if ((app_reset_handler < image_start) ||
+        (app_reset_handler >= image_end))
+    {
+        printf("Invalid Application Reset Handler\r\n");
+        return;
+    }
+
+    /* Reset_Handler must be Thumb code */
+    if ((app_reset_handler & 1U) == 0U)
+    {
+        printf("Invalid Reset Handler: Thumb bit not set\r\n");
+        return;
+    }
+
+    /* Point Cortex-M to the selected application's vector table */
+    SCB->VTOR = image_start;
+
+    /* Load application stack pointer */
+    __set_MSP(app_sp);
+
+    /* Jump to application Reset_Handler */
+    void (*reset_handler)(void) =
+        (void (*)(void))app_reset_handler;
+
+    reset_handler();
+}
+
+/**
+ * @brief  Update Active Image metadata in Sector 2.
+ * @param  digest SHA-256 digest of the Active Image.
+ * @retval HAL_OK if metadata was erased and programmed successfully.
+ */
+static HAL_StatusTypeDef UpdateActiveMetadata(
+    const uint8_t *digest)
+{
+    firmware_metadata_t metadata;
+    HAL_StatusTypeDef status;
+
+    if (digest == NULL)
+    {
+        return HAL_ERROR;
+    }
+
+    metadata.magic = FIRMWARE_METADATA_MAGIC;
+    metadata.image_size = APP_IMAGE_SIZE;
+    metadata.version = 0U;
+
+    memcpy(metadata.sha256,
+           digest,
+           SHA256_DIGEST_SIZE);
+
+    metadata.update_state = 2U;
+
+    status = FlashStorage_EraseSector(
+        FLASH_SECTOR_2,
+        FLASH_VOLTAGE_RANGE_3);
+
+    if (status != HAL_OK)
+    {
+        return status;
+    }
+
+    return FlashStorage_ProgramMetadata(
+        FLASH_ACTIVE_METADATA_ADDRESS,
+        &metadata);
+}
+
+/**
+ * @brief  Keep the bootloader in a safe state when no valid
+ *         firmware image is available.
+ * @retval None
+ */
+static void Bootloader_FailSafe(void)
+{
+    printf("Bootloader: no valid firmware image\r\n");
+
+    while (1)
+    {
+        HAL_GPIO_TogglePin(GPIOD, LD4_Pin);
+        HAL_Delay(500);
+    }
+}
 /* USER CODE END 4 */
 
 /**

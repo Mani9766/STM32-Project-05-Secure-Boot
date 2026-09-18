@@ -21,3 +21,4 @@
 "./Modules/Crypto/Src/sha256.o"
 "./Modules/Flash/Src/flash_storage.o"
 "./Modules/Metadata/Src/metadata.o"
+"./Modules/image_validation/Src/image_validation.o"

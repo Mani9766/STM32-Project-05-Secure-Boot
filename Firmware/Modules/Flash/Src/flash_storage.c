@@ -1,27 +1,18 @@
-/*
- * flash_storage.c
- *
- *  Created on: Sep 15, 2026
- *      Author: Manisha Daigavhane
- */
-
 #include "flash_storage.h"
 #include <string.h>
 
-#define FLASH_METADATA_SECTOR    FLASH_SECTOR_2
-#define FLASH_METADATA_VOLTAGE   FLASH_VOLTAGE_RANGE_3
-#define FLASH_METADATA_ADDRESS  0x08008000U
-
-HAL_StatusTypeDef FlashStorage_EraseMetadataSector(void)
+HAL_StatusTypeDef FlashStorage_EraseSector(
+    uint32_t sector,
+    uint32_t voltage_range)
 {
-    FLASH_EraseInitTypeDef erase_init;
+    FLASH_EraseInitTypeDef erase_init = {0};
     uint32_t sector_error = 0xFFFFFFFFU;
     HAL_StatusTypeDef status;
 
     erase_init.TypeErase = FLASH_TYPEERASE_SECTORS;
-    erase_init.Sector = FLASH_METADATA_SECTOR;
+    erase_init.Sector = sector;
     erase_init.NbSectors = 1U;
-    erase_init.VoltageRange = FLASH_METADATA_VOLTAGE;
+    erase_init.VoltageRange = voltage_range;
 
     HAL_FLASH_Unlock();
 
@@ -33,11 +24,16 @@ HAL_StatusTypeDef FlashStorage_EraseMetadataSector(void)
 }
 
 HAL_StatusTypeDef FlashStorage_ProgramMetadata(
+    uint32_t address,
     const firmware_metadata_t *metadata)
 {
-    uint32_t address = FLASH_METADATA_ADDRESS;
     uint32_t data;
     HAL_StatusTypeDef status;
+
+    if (metadata == NULL)
+    {
+        return HAL_ERROR;
+    }
 
     HAL_FLASH_Unlock();
 
@@ -67,6 +63,7 @@ HAL_StatusTypeDef FlashStorage_ProgramMetadata(
 }
 
 HAL_StatusTypeDef FlashStorage_ReadMetadata(
+    uint32_t address,
     firmware_metadata_t *metadata)
 {
     if (metadata == NULL)
@@ -75,7 +72,7 @@ HAL_StatusTypeDef FlashStorage_ReadMetadata(
     }
 
     memcpy(metadata,
-           (const void *)FLASH_METADATA_ADDRESS,
+           (const void *)address,
            sizeof(firmware_metadata_t));
 
     return HAL_OK;

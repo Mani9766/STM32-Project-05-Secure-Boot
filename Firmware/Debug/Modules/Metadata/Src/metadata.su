@@ -1,0 +1,2 @@
+../Modules/Metadata/Src/metadata.c:10:6:Metadata_Validate	32	static
+../Modules/Metadata/Src/metadata.c:69:6:Metadata_IsCandidateNewer	16	static

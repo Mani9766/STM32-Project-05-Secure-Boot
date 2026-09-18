@@ -1,5 +1,7 @@
-../Core/Src/main.c:70:6:jump_to_application	24	static,ignoring_inline_asm
-../Core/Src/main.c:120:5:main	64	static
-../Core/Src/main.c:236:6:SystemClock_Config	88	static
-../Core/Src/main.c:283:13:MX_GPIO_Init	56	static
-../Core/Src/main.c:430:6:Error_Handler	4	static,ignoring_inline_asm
+../Core/Src/main.c:81:5:main	176	static
+../Core/Src/main.c:293:6:SystemClock_Config	88	static
+../Core/Src/main.c:340:13:MX_GPIO_Init	56	static
+../Core/Src/main.c:480:13:JumpToApplication	32	static,ignoring_inline_asm
+../Core/Src/main.c:534:26:UpdateActiveMetadata	80	static
+../Core/Src/main.c:574:13:Bootloader_FailSafe	8	static
+../Core/Src/main.c:590:6:Error_Handler	4	static,ignoring_inline_asm
