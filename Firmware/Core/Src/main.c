@@ -114,6 +114,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /* Read Active Image Metadata */
+
   status = FlashStorage_ReadMetadata(
       FLASH_ACTIVE_METADATA_ADDRESS,
       &active_metadata);
@@ -132,7 +133,9 @@ int main(void)
       Bootloader_FailSafe();
   }
 
+
   /* Read Candidate Image Metadata */
+
   status = FlashStorage_ReadMetadata(
       FLASH_CANDIDATE_METADATA_ADDRESS,
       &candidate_metadata);
@@ -157,6 +160,7 @@ int main(void)
 
 
   /* Handle Candidate Image */
+
   if (candidate_metadata_valid &&
       Metadata_IsCandidateNewer(&active_metadata,
                                 &candidate_metadata))
@@ -168,7 +172,7 @@ int main(void)
           candidate_metadata.image_size;
 
       /*
-       * Verify candidate image on every boot attempt.
+       * Verify candidate firmware integrity.
        */
       printf("Calculating candidate SHA-256\r\n");
 
@@ -182,76 +186,22 @@ int main(void)
               candidate_metadata.sha256))
       {
           printf("Candidate SHA-256 matched\r\n");
+          printf("Booting candidate image\r\n");
 
-          /*
-           * Candidate was booted previously but did not
-           * reach application confirmation.
-           */
-          if (candidate_metadata.update_state ==
-              CANDIDATE_STATE_BOOT_PENDING)
-          {
-              printf("Candidate was not confirmed\r\n");
-              printf("Rolling back to active image\r\n");
-
-              candidate_metadata.update_state =
-                  CANDIDATE_STATE_ROLLBACK;
-
-              /*
-               * Persist candidate_metadata here.
-               */
-          }
-          else if ((candidate_metadata.update_state ==
-                    CANDIDATE_STATE_PENDING_VALIDATION) ||
-                   (candidate_metadata.update_state ==
-                    CANDIDATE_STATE_VALIDATED))
-          {
-              /*
-               * Candidate passed integrity verification and
-               * is now being attempted for the first time.
-               */
-              candidate_metadata.update_state =
-                  CANDIDATE_STATE_BOOT_PENDING;
-
-              /*
-               * IMPORTANT:
-               * Persist BOOT_PENDING before jumping.
-               */
-
-              printf("Candidate set to BOOT_PENDING\r\n");
-              printf("Booting candidate image\r\n");
-
-              JumpToApplication(
-                  CANDIDATE_IMAGE_START,
-                  candidate_image_end);
-          }
-          else if (candidate_metadata.update_state ==
-                   CANDIDATE_STATE_CONFIRMED)
-          {
-              /*
-               * Application previously confirmed successful boot.
-               */
-              printf("Candidate image confirmed\r\n");
-              printf("Booting confirmed candidate image\r\n");
-
-              JumpToApplication(
-                  CANDIDATE_IMAGE_START,
-                  candidate_image_end);
-          }
+          JumpToApplication(
+              CANDIDATE_IMAGE_START,
+              candidate_image_end);
       }
       else
       {
           printf("Candidate SHA-256 mismatch\r\n");
-
-          candidate_metadata.update_state =
-              CANDIDATE_STATE_INVALID;
-
-          /*
-           * Persist candidate_metadata here.
-           */
+          printf("Candidate image rejected\r\n");
       }
   }
 
+
   /* Verify Active Image and use it as fallback */
+
   {
       printf("Calculating active SHA-256\r\n");
 
@@ -272,6 +222,8 @@ int main(void)
       }
 
       printf("Active SHA-256 mismatch\r\n");
+
+      Bootloader_FailSafe();
   }
   /* USER CODE END 2 */
 
