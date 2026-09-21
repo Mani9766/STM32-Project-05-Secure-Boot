@@ -2,142 +2,88 @@
 
 ## 1. Overview
 
-The Secure Boot project uses separate memory regions for the Bootloader and Application.
+The Secure Boot project uses dedicated Flash regions for the Bootloader, firmware metadata, candidate firmware, and active firmware.
 
-The Bootloader executes first after MCU reset and is responsible for validating the Application before transferring control to it.
+The Bootloader executes first after MCU reset. It validates firmware metadata and image boundaries, performs SHA-256 integrity verification, and transfers control to a validated application image.
+
+The memory architecture also provides separate candidate and active firmware regions for the current FOTA-oriented validation flow.
+
+---
 
 ## 2. Flash Memory Layout
 
-The initial memory layout is planned as:
+The current STM32F407 internal Flash organization is:
 
 ```text
 STM32F407 Internal Flash
-┌──────────────┬──────────────┬──────────────────────┐
-│   ADDRESS    │    SECTOR    │        ROLE          │
-├──────────────┼──────────────┼──────────────────────┤
-│ 0x08000000   │   Sector 0   │ Bootloader           │
-│ 0x08004000   │   Sector 1   │ Bootloader           │
-│ 0x08008000   │   Sector 2   │ Firmware Metadata    │
-│ 0x0800C000   │   Sector 3   │ Application          │
-│ 0x08010000   │   Sector 4   │ Application          │
-│ 0x08020000   │   Sector 5   │ Application          │
-│ 0x08040000   │   Sector 6   │ Application          │
-│ 0x08060000   │   Sector 7   │ Application          │
-| 0x08080000   |   Sector 8   | Application          |
-│ 0x080A0000   │   Sector 9   │ Application          │
-│ 0x080C0000   │   Sector 10  │ Application          │
-| 0x080E0000   |   Sector 11  | Application          |
-├──────────────┼──────────────┼──────────────────────┤
-│ 0x080FFFFF   │    End       │                      │
-└──────────────┴──────────────┴──────────────────────┘
-```
-And the key boundaries are:
 
-- Bootloader  : 0x08000000 – 0x08007FFF
-- Metadata    : 0x08008000 – 0x0800BFFF
-- Application : 0x0800C000 – 0x0807FFFF
+┌──────────────┬──────────────┬────────────────────────────┐
+│   ADDRESS    │    SECTOR    │           ROLE             │
+├──────────────┼──────────────┼────────────────────────────┤
+│ 0x08000000   │   Sector 0   │ Bootloader                 │
+│ 0x08004000   │   Sector 1   │ Bootloader                 │
+│ 0x08008000   │   Sector 2   │ Active Image Metadata      │
+│ 0x0800C000   │   Sector 3   │ Candidate Image Metadata  │
+│ 0x08010000   │   Sector 4   │ Candidate Firmware        │
+│ 0x08020000   │   Sector 5   │ Active Firmware           │
+│ 0x08040000   │   Sector 6   │ Active Firmware           │
+│ 0x08060000   │   Sector 7   │ Active Firmware           │
+│ 0x08080000   │   Sector 8   │ Available / Reserved      │
+│ 0x080A0000   │   Sector 9   │ Available / Reserved      │
+│ 0x080C0000   │   Sector 10  │ Available / Reserved      │
+│ 0x080E0000   │   Sector 11  │ Available / Reserved      │
+├──────────────┴──────────────┴────────────────────────────┤
+│ 0x080FFFFF   │            Flash End Address              │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Key Memory Boundaries
+
+* **Bootloader:** `0x08000000 – 0x08007FFF`
+* **Active Metadata:** `0x08008000 – 0x0800BFFF`
+* **Candidate Metadata:** `0x0800C000 – 0x0800FFFF`
+* **Candidate Firmware:** `0x08010000 – 0x0801FFFF`
+* **Active Firmware:** starts at `0x08020000`
+* **Flash End:** `0x080FFFFF`
+
+The candidate and active firmware images are intentionally stored at different Flash locations so that the active firmware remains available while the candidate image is being validated.
+
+---
 
 ## 3. Bootloader Region
 
-The Bootloader occupies a dedicated region of Flash memory.
+The Bootloader occupies dedicated Flash memory in Sectors 0 and 1.
 
-Responsibilities include:
+### Responsibilities
 
-- MCU startup handling
-- Application detection
-- Firmware validation
-- Integrity verification
-- Authenticity verification
-- Application handover
-- Failure/recovery handling
+* MCU startup handling
+* Firmware metadata handling
+* Application image validation
+* Firmware version validation
+* SHA-256 integrity verification
+* Candidate image validation
+* Active-image fallback
+* Failure handling
+* Application handover
 
-The Bootloader must remain available even when the Application firmware is updated.
+The Bootloader region is separated from the firmware image regions and is not part of the application integrity calculation.
 
-## 4. Application Region
+---
 
-The Application is placed at a different Flash address from the Bootloader.
+## 4. Metadata Regions
 
-The Application linker script must therefore be configured with the correct Flash origin and available Flash size.
+Metadata is stored separately from the firmware images.
 
-The Application must not overwrite the Bootloader region.
+### Active Image Metadata
 
-## 5. Vector Table
+* **Flash sector:** Sector 2
+* **Base address:** `0x08008000`
+* **Purpose:** Stores metadata describing the active firmware image
 
-Both the Bootloader and Application have their own vector tables.
+### Candidate Image Metadata
 
-The Bootloader starts from its configured vector table.
+* **Flash sector:** Sector 3
+* **Base address:** `0x0800C000`
+* **Purpose:** Stores metadata describing the candidate firmware image
 
-Before jumping to the Application, the Bootloader must configure the Vector Table Offset Register (VTOR) to point to the Application's vector table.
-
-Conceptually:
-```text
-Bootloader Vector Table
-        |
-        v
-Bootloader Execution
-        |
-        | Validate Application
-        |
-        v
-Application Vector Table
-        |
-        v
-Application Reset Handler
-        |
-        v
-Application Execution
-```
-## 6. Linker Script
-
-Separate linker configurations are required for the Bootloader and Application.
-
-The linker scripts define:
-
-- Flash origin
-- Flash size
-- RAM origin
-- RAM size
-- Code sections
-- Read-only data
-- Initialized data
-- Uninitialized data
-- Stack
-- Heap
-
-The Application linker configuration must account for the Flash space occupied by the Bootloader.
-
-## 7. Memory Protection
-
-The memory architecture must ensure that:
-
-- Application code cannot overwrite the Bootloader region.
-- Bootloader and Application regions are clearly separated.
-- Firmware images are stored at known addresses.
-- Verification operates on the intended memory region.
-
-Additional hardware memory protection mechanisms may be considered during security hardening.
-
-## 8. Design Considerations
-
-The following items will be finalized during implementation:
-
-- Bootloader start address
-- Application start address
-- Application maximum size
-- Metadata location
-- Firmware image format
-- Signature/hash storage
-- Reserved Flash regions
-- RAM requirements
-- Update/recovery area
-## 9. Implementation Status
-
-Status: Implemented and Verified
-
-The memory addresses and linker configurations are as follows:
-- Bootloader start address: 0x08000000
-- Application start address: 0x0800C000
-- Application maximum region: 0x0800C000–0x0807FFFF
-- Metadata location: Sector 2, 0x08008000–0x0800BFFF
-- Signature/hash storage: Metadata region
-- Reserved Flash regions: Sector 2 for metadata
+The metadata contains info
