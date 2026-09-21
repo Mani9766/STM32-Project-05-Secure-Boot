@@ -1,156 +1,68 @@
 # Secure Boot Project – Project Overview
 
-
-
 ## 1. Introduction
 
+This project focuses on designing and implementing a Secure Boot and dual-image firmware update architecture for an STM32F407-based embedded system.
 
+The current implementation focuses on firmware integrity verification, application image validation, secure application handover, and candidate/active firmware management.
 
-This project focuses on designing and implementing a Secure Boot mechanism for an STM32-based embedded system.
+Digital-signature-based firmware authenticity verification is planned as a future security extension.
 
-
-
-The primary objective is to ensure that the microcontroller executes only a valid and trusted application firmware.
-
-
+---
 
 ## 2. Problem Statement
 
-
-
 In a conventional boot flow, the microcontroller may directly execute application firmware after reset.
 
+If the firmware is corrupted or modified, the system may execute unintended code.
 
+A Secure Bootloader introduces a verification step before application execution to ensure that the firmware image satisfies the defined validation and integrity requirements.
 
-If the firmware is corrupted, modified, or replaced with an unauthorized image, the system may execute unintended code.
+For firmware update scenarios, the system also needs to evaluate a new candidate image without unnecessarily overwriting the currently active firmware.
 
-
-
-Secure Boot introduces a verification step before application execution.
-
-
+---
 
 ## 3. Project Objective
 
+The project objectives are to:
 
+* Start bootloader execution after MCU reset.
+* Identify and validate the installed firmware image.
+* Validate firmware metadata and application memory boundaries.
+* Verify firmware integrity using SHA-256.
+* Manage separate active and candidate firmware images.
+* Independently verify candidate firmware before execution.
+* Execute an application only after successful validation.
+* Reject invalid or corrupted firmware safely.
+* Provide an active-image fallback when candidate validation fails.
+* Provide a foundation for future authenticated firmware updates.
 
-The Secure Bootloader will:
-
-
-
-- Start execution after MCU reset.
-
-- Identify the installed application firmware.
-
-- Validate the application firmware.
-
-- Verify firmware integrity.
-
-- Verify firmware authenticity.
-
-- Execute the application only when verification succeeds.
-
-- Handle invalid or corrupted firmware safely.
-
-
+---
 
 ## 4. High-Level Architecture
 
-
-
-The system consists of two major software components:
-
-
+The system consists of three logical areas:
 
 ### Bootloader
 
-
-
 The Bootloader executes first after MCU reset.
-
-
 
 Responsibilities include:
 
+* Boot decision
+* Firmware metadata handling
+* Application image boundary validation
+* Firmware version validation
+* SHA-256 integrity verification
+* Candidate image validation
+* Active-image fallback
+* Failure handling
+* Application handover
 
+### Candidate Firmware
 
-- Boot decision
+The Candidate Firmware represents a new firmware image being evaluated by the bootloader.
 
-- Application image validation
+The candidate image is stored separately from the active firmware so that the existing active image remains available while the candidate is being validated.
 
-- Firmware verification
-
-- Failure handling
-
-- Application handover
-
-
-
-### Application
-
-
-
-The Application contains the actual product functionality.
-
-
-
-The Application is executed only after the Bootloader successfully validates the firmware.
-
-
-
-## 5. Development Approach
-
-
-
-The project will be developed incrementally:
-
-
-
-1\. Basic Bootloader
-
-2\. Application memory separation
-
-3\. Bootloader-to-Application jump
-
-4\. Firmware image identification
-
-5\. Firmware integrity verification
-
-6\. Firmware authenticity verification
-
-7\. Invalid image handling
-
-8\. Security hardening
-
-9\. Testing and verification
-
-10\. Extension toward automotive software safety practices
-
-
-
-## 6. Target Platform
-
-
-
-- MCU: STM32
-
-- CPU: ARM Cortex-M
-
-- Language: Embedded C
-
-- Debug Interface: SWD
-
-- Development Environment: STM32CubeIDE
-
-
-
-## 7. Project Status
-
-
-
-\*\*Status: Work in Progress\*\*
-
-
-
-Features will be documented as they are implemented and verified.
-
+The bootloader independently calculates the can
