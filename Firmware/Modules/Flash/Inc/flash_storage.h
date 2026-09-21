@@ -23,4 +23,9 @@ HAL_StatusTypeDef FlashStorage_ReadMetadata(
     uint32_t address,
     firmware_metadata_t *metadata);
 
+HAL_StatusTypeDef FlashStorage_ProgramImage(
+    uint32_t destination_address,
+    uint32_t source_address,
+    uint32_t image_size);
+
 #endif /* FLASH_STORAGE_H_ */

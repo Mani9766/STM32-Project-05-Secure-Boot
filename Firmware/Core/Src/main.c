@@ -53,6 +53,8 @@
 #define FLASH_CANDIDATE_METADATA_ADDRESS   0x0800C000U
 
 #define ACTIVE_IMAGE_REGION_END  0x08100000U
+
+//#define UPDATE_SECTOR_2
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -113,118 +115,157 @@ int main(void)
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
 
-  /* Read Active Image Metadata */
+  #ifdef UPDATE_SECTOR_2
 
-  status = FlashStorage_ReadMetadata(
-      FLASH_ACTIVE_METADATA_ADDRESS,
-      &active_metadata);
+      uint8_t metadata_digest[SHA256_DIGEST_SIZE];
 
-  if (status != HAL_OK)
-  {
-      printf("Failed to read active metadata\r\n");
-      Bootloader_FailSafe();
-  }
-
-  if (!Metadata_Validate(&active_metadata,
-                         APP_IMAGE_START,
-                         ACTIVE_IMAGE_REGION_END))
-  {
-      printf("Invalid Active Image Metadata\r\n");
-      Bootloader_FailSafe();
-  }
-
-
-  /* Read Candidate Image Metadata */
-
-  status = FlashStorage_ReadMetadata(
-      FLASH_CANDIDATE_METADATA_ADDRESS,
-      &candidate_metadata);
-
-  if (status != HAL_OK)
-  {
-      printf("Failed to read candidate metadata\r\n");
-      candidate_metadata_valid = false;
-  }
-  else
-  {
-      candidate_metadata_valid =
-          Metadata_Validate(&candidate_metadata,
-                            CANDIDATE_IMAGE_START,
-                            CANDIDATE_IMAGE_REGION_END);
-
-      if (!candidate_metadata_valid)
-      {
-          printf("Invalid Candidate Image Metadata\r\n");
-      }
-  }
-
-
-  /* Handle Candidate Image */
-
-  if (candidate_metadata_valid &&
-      Metadata_IsCandidateNewer(&active_metadata,
-                                &candidate_metadata))
-  {
-      printf("New candidate firmware detected\r\n");
-
-      candidate_image_end =
-          CANDIDATE_IMAGE_START +
-          candidate_metadata.image_size;
+      printf("Updating active metadata in Sector 2\r\n");
 
       /*
-       * Verify candidate firmware integrity.
+       * Calculate SHA-256 of the current active image.
        */
-      printf("Calculating candidate SHA-256\r\n");
-
-      ImageValidation_CalculateSHA256(
-          CANDIDATE_IMAGE_START,
-          candidate_metadata.image_size,
-          candidate_digest);
-
-      if (ImageValidation_VerifySHA256(
-              candidate_digest,
-              candidate_metadata.sha256))
-      {
-          printf("Candidate SHA-256 matched\r\n");
-          printf("Booting candidate image\r\n");
-
-          JumpToApplication(
-              CANDIDATE_IMAGE_START,
-              candidate_image_end);
-      }
-      else
-      {
-          printf("Candidate SHA-256 mismatch\r\n");
-          printf("Candidate image rejected\r\n");
-      }
-  }
-
-
-  /* Verify Active Image and use it as fallback */
-
-  {
-      printf("Calculating active SHA-256\r\n");
-
       ImageValidation_CalculateSHA256(
           APP_IMAGE_START,
           APP_IMAGE_SIZE,
-          active_digest);
+          metadata_digest);
 
-      if (ImageValidation_VerifySHA256(
-              active_digest,
-              active_metadata.sha256))
+      /*
+       * Erase Sector 2 and program active metadata.
+       */
+      status = UpdateActiveMetadata(metadata_digest);
+
+      if (status != HAL_OK)
       {
-          printf("Active SHA-256 matched\r\n");
-
-          JumpToApplication(
-              APP_IMAGE_START,
-              APP_IMAGE_END);
+          printf("Failed to update active metadata\r\n");
+          Bootloader_FailSafe();
       }
 
-      printf("Active SHA-256 mismatch\r\n");
+      printf("Active metadata updated successfully\r\n");
 
-      Bootloader_FailSafe();
-  }
+      /*
+       * Stop here.
+       * Do not execute the normal bootloader flow.
+       */
+      while (1)
+      {
+      }
+
+  #else
+
+      /* Read Active Image Metadata */
+
+      status = FlashStorage_ReadMetadata(
+          FLASH_ACTIVE_METADATA_ADDRESS,
+          &active_metadata);
+
+      if (status != HAL_OK)
+      {
+          printf("Failed to read active metadata\r\n");
+          Bootloader_FailSafe();
+      }
+
+      if (!Metadata_Validate(&active_metadata,
+                             APP_IMAGE_START,
+                             ACTIVE_IMAGE_REGION_END))
+      {
+          printf("Invalid Active Image Metadata\r\n");
+          Bootloader_FailSafe();
+      }
+
+
+      /* Read Candidate Image Metadata */
+
+      status = FlashStorage_ReadMetadata(
+          FLASH_CANDIDATE_METADATA_ADDRESS,
+          &candidate_metadata);
+
+      if (status != HAL_OK)
+      {
+          printf("Failed to read candidate metadata\r\n");
+          candidate_metadata_valid = false;
+      }
+      else
+      {
+          candidate_metadata_valid =
+              Metadata_Validate(&candidate_metadata,
+                                CANDIDATE_IMAGE_START,
+                                CANDIDATE_IMAGE_REGION_END);
+
+          if (!candidate_metadata_valid)
+          {
+              printf("Invalid Candidate Image Metadata\r\n");
+          }
+      }
+
+
+      /* Handle Candidate Image */
+
+      if (candidate_metadata_valid &&
+          Metadata_IsCandidateNewer(&active_metadata,
+                                    &candidate_metadata))
+      {
+          printf("New candidate firmware detected\r\n");
+
+          candidate_image_end =
+              CANDIDATE_IMAGE_START +
+              candidate_metadata.image_size;
+
+          printf("Calculating candidate SHA-256\r\n");
+
+          ImageValidation_CalculateSHA256(
+              CANDIDATE_IMAGE_START,
+              candidate_metadata.image_size,
+              candidate_digest);
+
+          if (ImageValidation_VerifySHA256(
+                  candidate_digest,
+                  candidate_metadata.sha256))
+          {
+              printf("Candidate SHA-256 matched\r\n");
+              printf("Booting candidate image\r\n");
+
+              JumpToApplication(
+                  CANDIDATE_IMAGE_START,
+                  candidate_image_end);
+          }
+          else
+          {
+              printf("Candidate SHA-256 mismatch\r\n");
+              printf("Candidate image rejected\r\n");
+          }
+      }
+
+
+      /* Verify Active Image and use it as fallback */
+
+      {
+          uint32_t active_image_end =
+              APP_IMAGE_START + active_metadata.image_size;
+
+          printf("Calculating active SHA-256\r\n");
+
+          ImageValidation_CalculateSHA256(
+              APP_IMAGE_START,
+              active_metadata.image_size,
+              active_digest);
+
+          if (ImageValidation_VerifySHA256(
+                  active_digest,
+                  active_metadata.sha256))
+          {
+              printf("Active SHA-256 matched\r\n");
+
+              JumpToApplication(
+                  APP_IMAGE_START,
+                  active_image_end);
+          }
+
+          printf("Active SHA-256 mismatch\r\n");
+          Bootloader_FailSafe();
+      }
+
+  #endif
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -433,7 +474,7 @@ static void JumpToApplication(uint32_t image_start,
                               uint32_t image_end)
 {
     uint32_t app_sp;
-    uint32_t app_reset_handler;
+    uint32_t app_reset_handler = 0x00U;
 
     /* Read initial stack pointer from image vector table */
     app_sp = *(volatile uint32_t *)image_start;
