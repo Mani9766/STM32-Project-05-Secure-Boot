@@ -53,28 +53,26 @@ STM32F407 Internal Flash
 10. Fall back to the active firmware when the candidate is rejected
 
 ### Candidate Image Validation State Flow
-
 ```mermaid
 stateDiagram-v2
-    [*] --> ReadCandidateMetadata
+    [*] --> ReadMetadata
 
-    ReadCandidateMetadata --> InvalidCandidate : Read/metadata validation fails
-    ReadCandidateMetadata --> CheckVersion : Metadata valid
+    ReadMetadata --> Invalid : Metadata invalid
+    ReadMetadata --> CheckVersion : Metadata valid
 
-    CheckVersion --> CandidateRejected : Candidate not newer
-    CheckVersion --> CalculateCandidateSHA : Candidate is newer
+    CheckVersion --> Reject : Version not newer
+    CheckVersion --> CalculateSHA : Version newer
 
-    CalculateCandidateSHA --> CandidateRejected : SHA-256 mismatch
-    CalculateCandidateSHA --> BootCandidate : SHA-256 matched
+    CalculateSHA --> Reject : SHA mismatch
+    CalculateSHA --> BootCandidate : SHA matched
 
-    CandidateRejected --> VerifyActiveImage
-    InvalidCandidate --> VerifyActiveImage
+    Invalid --> VerifyActive
+    Reject --> VerifyActive
+
+    VerifyActive --> BootActive : SHA matched
+    VerifyActive --> FailSafe : SHA mismatch
 
     BootCandidate --> [*]
-
-    VerifyActiveImage --> BootActive : Active SHA-256 matched
-    VerifyActiveImage --> FailSafe : Active SHA-256 mismatch
-
     BootActive --> [*]
     FailSafe --> [*]
 ```
@@ -85,10 +83,10 @@ stateDiagram-v2
 sequenceDiagram
     participant BL as Bootloader
     participant CM as Candidate Metadata
-    participant CS as Candidate Firmware
+    participant CS as Candidate Image
     participant SHA as SHA-256
     participant AM as Active Metadata
-    participant AS as Active Firmware
+    participant AS as Active Image
     participant APP as Application
 
     BL->>AM: Read active metadata
@@ -97,35 +95,30 @@ sequenceDiagram
     BL->>CM: Read candidate metadata
     CM-->>BL: Candidate metadata
 
-    BL->>BL: Validate candidate metadata
-    BL->>BL: Validate image boundaries
-    BL->>BL: Compare firmware versions
+    BL->>BL: Validate metadata and boundaries
+    BL->>BL: Compare versions
 
-    alt Candidate is newer and valid
+    alt Candidate valid and newer
         BL->>CS: Read candidate image
         BL->>SHA: Calculate SHA-256
-        SHA-->>BL: Calculated candidate digest
-        BL->>BL: Compare with stored digest
+        SHA-->>BL: Candidate digest
+        BL->>BL: Compare digest
 
-        alt SHA-256 matched
-            BL->>APP: Jump to candidate image
-            APP-->>BL: Application executes
-        else SHA-256 mismatch
+        alt SHA matched
+            BL->>APP: Jump to candidate
+        else SHA mismatch
             BL->>BL: Reject candidate
-            BL->>AS: Calculate active SHA-256
-            AS-->>BL: Active image data
-            BL->>SHA: Calculate active digest
-            SHA-->>BL: Calculated active digest
-            BL->>BL: Verify active digest
-            BL->>APP: Jump to active image
+            BL->>AS: Read active image
+            BL->>SHA: Calculate SHA-256
+            SHA-->>BL: Active digest
+            BL->>APP: Jump to active
         end
-    else Candidate invalid or not newer
-        BL->>AS: Calculate active SHA-256
-        AS-->>BL: Active image data
-        BL->>SHA: Calculate active digest
-        SHA-->>BL: Calculated active digest
-        BL->>BL: Verify active digest
-        BL->>APP: Jump to active image
+
+    else Candidate invalid or older
+        BL->>AS: Read active image
+        BL->>SHA: Calculate SHA-256
+        SHA-->>BL: Active digest
+        BL->>APP: Jump to active
     end
 ```
 
