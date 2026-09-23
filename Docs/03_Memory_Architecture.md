@@ -23,18 +23,18 @@ STM32F407 Internal Flash
 │ 0x08000000   │   Sector 0   │ Bootloader                 │
 │ 0x08004000   │   Sector 1   │ Bootloader                 │
 │ 0x08008000   │   Sector 2   │ Active Image Metadata      │
-│ 0x0800C000   │   Sector 3   │ Candidate Image Metadata  │
-│ 0x08010000   │   Sector 4   │ Candidate Firmware        │
-│ 0x08020000   │   Sector 5   │ Active Firmware           │
-│ 0x08040000   │   Sector 6   │ Active Firmware           │
-│ 0x08060000   │   Sector 7   │ Active Firmware           │
-│ 0x08080000   │   Sector 8   │ Available / Reserved      │
-│ 0x080A0000   │   Sector 9   │ Available / Reserved      │
-│ 0x080C0000   │   Sector 10  │ Available / Reserved      │
-│ 0x080E0000   │   Sector 11  │ Available / Reserved      │
+│ 0x0800C000   │   Sector 3   │ Candidate Image Metadata   │
+│ 0x08010000   │   Sector 4   │ Candidate Firmware         │
+│ 0x08020000   │   Sector 5   │ Active Firmware            │
+│ 0x08040000   │   Sector 6   │ Active Firmware            │
+│ 0x08060000   │   Sector 7   │ Active Firmware            │
+│ 0x08080000   │   Sector 8   │ Available / Reserved       │
+│ 0x080A0000   │   Sector 9   │ Available / Reserved       │
+│ 0x080C0000   │   Sector 10  │ Available / Reserved       │
+│ 0x080E0000   │   Sector 11  │ Available / Reserved       │
 ├──────────────┴──────────────┴────────────────────────────┤
 │ 0x080FFFFF   │            Flash End Address              │
-└─────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────┘
 ```
 
 ### Key Memory Boundaries
