@@ -1,0 +1,5 @@
+../Modules/Crypto/Src/sha256.c:55:13:SHA256_Transform	4
+../Modules/Crypto/Src/sha256.c:136:6:SHA256_Init	1
+../Modules/Crypto/Src/sha256.c:160:6:SHA256_Update	3
+../Modules/Crypto/Src/sha256.c:183:6:SHA256_Padding	4
+../Modules/Crypto/Src/sha256.c:228:6:SHA256_Final	2

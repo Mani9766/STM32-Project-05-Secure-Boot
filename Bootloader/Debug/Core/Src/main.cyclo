@@ -1,0 +1,9 @@
+../Drivers/CMSIS/Include/core_cm4.h:2064:26:ITM_SendChar	4
+../Core/Src/main.c:77:5:__io_putchar	1
+../Core/Src/main.c:88:5:main	9
+../Core/Src/main.c:291:6:SystemClock_Config	3
+../Core/Src/main.c:338:13:MX_GPIO_Init	1
+../Core/Src/main.c:478:13:JumpToApplication	6
+../Core/Src/main.c:532:26:UpdateActiveMetadata	3
+../Core/Src/main.c:572:13:Bootloader_FailSafe	1
+../Core/Src/main.c:589:6:Error_Handler	1
