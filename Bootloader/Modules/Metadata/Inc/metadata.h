@@ -10,20 +10,24 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "sha256.h"
 
-#define FIRMWARE_METADATA_MAGIC  0xDEADBEEFU
+#define FIRMWARE_METADATA_MAGIC    0xDEADBEEFU
+#define METADATA_RECORD_MAGIC      0x4D455441U
+#define METADATA_COMMIT_MARKER     0xA5A55A5AU
 
 typedef enum
 {
-    CANDIDATE_STATE_EMPTY = 0U,
-    CANDIDATE_STATE_PENDING_VALIDATION,
-    CANDIDATE_STATE_VALIDATED,
-    CANDIDATE_STATE_BOOT_PENDING,
-    CANDIDATE_STATE_CONFIRMED,
-    CANDIDATE_STATE_INVALID,
-    CANDIDATE_STATE_ROLLBACK
-} candidate_update_state_t;
+    FIRMWARE_STATE_EMPTY = 0U,
+    FIRMWARE_STATE_PENDING_VALIDATION,
+    FIRMWARE_STATE_VALIDATED,
+    FIRMWARE_STATE_BOOT_PENDING,
+    FIRMWARE_STATE_CONFIRMED,
+    FIRMWARE_STATE_INVALID,
+    FIRMWARE_STATE_ROLLBACK
+
+} firmware_update_state_t;
 
 typedef struct
 {
@@ -32,15 +36,37 @@ typedef struct
     uint32_t version;
     uint8_t  sha256[SHA256_DIGEST_SIZE];
     uint32_t update_state;
+
 } firmware_metadata_t;
+
+typedef struct
+{
+    uint32_t record_magic;
+    uint32_t sequence;
+    firmware_metadata_t metadata;
+    uint32_t metadata_crc;
+    uint32_t commit_marker;
+
+} firmware_metadata_record_t;
 
 bool Metadata_Validate(
     const firmware_metadata_t *metadata,
     uintptr_t image_start,
     uintptr_t image_region_end);
 
-bool Metadata_IsCandidateNewer(
-    const firmware_metadata_t *active_metadata,
-    const firmware_metadata_t *candidate_metadata);
+uint32_t Metadata_CalculateRecordCRC(
+    const firmware_metadata_record_t *record);
 
-#endif /* INC_METADATA_H_ */
+bool Metadata_ValidateRecord(
+    const firmware_metadata_record_t *record);
+
+bool Metadata_IsSequenceNewer(
+    uint32_t current_sequence,
+    uint32_t new_sequence);
+
+bool Metadata_ReadLatestRecord(
+    uintptr_t sector_start,
+    uintptr_t sector_end,
+    firmware_metadata_record_t *latest_record);
+
+#endif /* METADATA_H */

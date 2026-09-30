@@ -17,7 +17,6 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "app_image_info.h"
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -43,21 +42,11 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define SRAM_START_ADDRESS                 0x20000000U
-#define SRAM_END_ADDRESS                   0x20020000U
 
-#define CANDIDATE_IMAGE_START              0x08010000U
-#define CANDIDATE_IMAGE_REGION_END         0x08020000U
-
-#define FLASH_ACTIVE_METADATA_ADDRESS      0x08008000U
-#define FLASH_CANDIDATE_METADATA_ADDRESS   0x0800C000U
-
-#define ACTIVE_IMAGE_REGION_END  0x08100000U
-
-//#define UPDATE_SECTOR_2
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+CRC_HandleTypeDef hcrc;
 
 /* USER CODE BEGIN PV */
 /* USER CODE END PV */
@@ -65,11 +54,25 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
 static void JumpToApplication(uint32_t image_start, uint32_t image_end);
-static HAL_StatusTypeDef UpdateActiveMetadata(
-    const uint8_t *digest) __attribute__((unused));
+
+static firmware_slot_t GetOtherSlot(firmware_slot_t slot);
+
+static uint32_t GetSlotImageStart(firmware_slot_t slot);
+
+static uint32_t GetSlotImageRegionEnd(firmware_slot_t slot);
+
+static HAL_StatusTypeDef FindConfirmedSlot(
+    const firmware_metadata_t *slot_a_metadata,
+    const firmware_metadata_t *slot_b_metadata,
+    bool slot_a_read_ok,
+    bool slot_b_read_ok,
+    firmware_slot_t *confirmed_slot);
+
 static void Bootloader_FailSafe(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -89,16 +92,21 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  firmware_metadata_t active_metadata;
-  firmware_metadata_t candidate_metadata;
+  firmware_metadata_t slot_a_metadata;
+  firmware_metadata_t slot_b_metadata;
 
   HAL_StatusTypeDef status;
 
-  bool candidate_metadata_valid = false;
+  firmware_slot_t active_slot;
+  firmware_slot_t inactive_slot;
 
-  uint8_t candidate_digest[SHA256_DIGEST_SIZE];
-  uint32_t candidate_image_end;
+  const firmware_metadata_t *active_metadata;
+
   uint8_t active_digest[SHA256_DIGEST_SIZE];
+
+  uint32_t active_image_start;
+  uint32_t active_image_end;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -118,159 +126,125 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 
-  #ifdef UPDATE_SECTOR_2
+  /* Read Slot A Metadata */
+  status = FlashStorage_ReadMetadata(
+      SLOT_A_METADATA_ADDRESS,
+      &slot_a_metadata);
 
-      uint8_t metadata_digest[SHA256_DIGEST_SIZE];
+  bool slot_a_metadata_read_ok = (status == HAL_OK);
 
-      printf("Updating active metadata in Sector 2\r\n");
+  if (!slot_a_metadata_read_ok)
+  {
+      printf("Failed to read Slot A metadata\r\n");
+  }
 
-      /*
-       * Calculate SHA-256 of the current active image.
-       */
-      ImageValidation_CalculateSHA256(
-          APP_IMAGE_START,
-          APP_IMAGE_SIZE,
-          metadata_digest);
+  /* Read Slot B metadata */
+  status = FlashStorage_ReadMetadata(
+      SLOT_B_METADATA_ADDRESS,
+      &slot_b_metadata);
 
-      /*
-       * Erase Sector 2 and program active metadata.
-       */
-      status = UpdateActiveMetadata(metadata_digest);
+  bool slot_b_metadata_read_ok = (status == HAL_OK);
 
-      if (status != HAL_OK)
-      {
-          printf("Failed to update active metadata\r\n");
-          Bootloader_FailSafe();
-      }
+  if (!slot_b_metadata_read_ok)
+  {
+      printf("Failed to read Slot B metadata\r\n");
+  }
 
-      printf("Active metadata updated successfully\r\n");
+  /*
+   * Determine the currently confirmed firmware slot.
+   *
+   * Metadata validation is intentionally performed only
+   * after the confirmed slot has been identified.
+   */
+  status = FindConfirmedSlot(
+      &slot_a_metadata,
+      &slot_b_metadata,
+      slot_a_metadata_read_ok,
+      slot_b_metadata_read_ok,
+      &active_slot);
 
-      /*
-       * Stop here.
-       * Do not execute the normal bootloader flow.
-       */
-      while (1)
-      {
-      }
+  if (status != HAL_OK)
+  {
+      printf("No valid confirmed firmware slot\r\n");
+      Bootloader_FailSafe();
+  }
 
-  #else
+  /* The other slot is currently inactive */
+  inactive_slot = GetOtherSlot(active_slot);
 
-      /* Read Active Image Metadata */
+  printf(
+      "Active Slot: %s\r\n",
+      (active_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
-      status = FlashStorage_ReadMetadata(
-          FLASH_ACTIVE_METADATA_ADDRESS,
-          &active_metadata);
+  printf(
+      "Inactive Slot: %s\r\n",
+      (inactive_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
-      if (status != HAL_OK)
-      {
-          printf("Failed to read active metadata\r\n");
-          Bootloader_FailSafe();
-      }
+  /*
+   * Select metadata belonging to the confirmed slot.
+   */
+  active_metadata =
+      (active_slot == FIRMWARE_SLOT_A) ?
+      &slot_a_metadata :
+      &slot_b_metadata;
 
-      if (!Metadata_Validate(&active_metadata,
-                             APP_IMAGE_START,
-                             ACTIVE_IMAGE_REGION_END))
-      {
-          printf("Invalid Active Image Metadata\r\n");
-          Bootloader_FailSafe();
-      }
+  /*
+   * Validate the confirmed slot metadata.
+   */
+  if (!Metadata_Validate(
+          active_metadata,
+          GetSlotImageStart(active_slot),
+          GetSlotImageRegionEnd(active_slot)))
+  {
+      printf("Invalid confirmed slot metadata\r\n");
+      Bootloader_FailSafe();
+  }
 
+  /* Get confirmed firmware address */
+  active_image_start =
+      GetSlotImageStart(active_slot);
 
-      /* Read Candidate Image Metadata */
+  active_image_end =
+      active_image_start +
+      active_metadata->image_size;
 
-      status = FlashStorage_ReadMetadata(
-          FLASH_CANDIDATE_METADATA_ADDRESS,
-          &candidate_metadata);
+  printf(
+      "Active image start: 0x%08lX\r\n",
+      (unsigned long)active_image_start);
 
-      if (status != HAL_OK)
-      {
-          printf("Failed to read candidate metadata\r\n");
-          candidate_metadata_valid = false;
-      }
-      else
-      {
-          candidate_metadata_valid =
-              Metadata_Validate(&candidate_metadata,
-                                CANDIDATE_IMAGE_START,
-                                CANDIDATE_IMAGE_REGION_END);
+  printf(
+      "Active image size: 0x%08lX\r\n",
+      (unsigned long)active_metadata->image_size);
 
-          if (!candidate_metadata_valid)
-          {
-              printf("Invalid Candidate Image Metadata\r\n");
-          }
-      }
+  /*
+   * Independently verify the confirmed firmware image.
+   */
+  printf(
+      "Calculating SHA-256 of active Slot %s\r\n",
+      (active_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
+  ImageValidation_CalculateSHA256(
+      active_image_start,
+      active_metadata->image_size,
+      active_digest);
 
-      /* Handle Candidate Image */
+  if (ImageValidation_VerifySHA256(
+          active_digest,
+          active_metadata->sha256))
+  {
+      printf("Active firmware SHA-256 matched\r\n");
 
-      if (candidate_metadata_valid &&
-          Metadata_IsCandidateNewer(&active_metadata,
-                                    &candidate_metadata))
-      {
-          printf("New candidate firmware detected\r\n");
+      JumpToApplication(
+          active_image_start,
+          active_image_end);
+  }
 
-          candidate_image_end =
-              CANDIDATE_IMAGE_START +
-              candidate_metadata.image_size;
+  printf("Active firmware SHA-256 mismatch\r\n");
 
-          printf("Calculating candidate SHA-256\r\n");
-
-          ImageValidation_CalculateSHA256(
-              CANDIDATE_IMAGE_START,
-              candidate_metadata.image_size,
-              candidate_digest);
-
-          if (ImageValidation_VerifySHA256(
-                  candidate_digest,
-                  candidate_metadata.sha256))
-          {
-              printf("Candidate SHA-256 matched\r\n");
-              printf("Booting candidate image\r\n");
-
-              JumpToApplication(
-                  CANDIDATE_IMAGE_START,
-                  candidate_image_end);
-          }
-          else
-          {
-              printf("Candidate SHA-256 mismatch\r\n");
-              printf("Candidate image rejected\r\n");
-          }
-      }
-
-
-      /* Verify Active Image and use it as fallback */
-
-      {
-          uint32_t active_image_end =
-              APP_IMAGE_START + active_metadata.image_size;
-
-          printf("Calculating active SHA-256\r\n");
-
-          ImageValidation_CalculateSHA256(
-              APP_IMAGE_START,
-              active_metadata.image_size,
-              active_digest);
-
-          if (ImageValidation_VerifySHA256(
-                  active_digest,
-                  active_metadata.sha256))
-          {
-              printf("Active SHA-256 matched\r\n");
-
-              JumpToApplication(
-                  APP_IMAGE_START,
-                  active_image_end);
-          }
-
-          printf("Active SHA-256 mismatch\r\n");
-          Bootloader_FailSafe();
-      }
-
-  #endif
-
+  Bootloader_FailSafe();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -328,6 +302,32 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief CRC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CRC_Init(void)
+{
+
+  /* USER CODE BEGIN CRC_Init 0 */
+
+  /* USER CODE END CRC_Init 0 */
+
+  /* USER CODE BEGIN CRC_Init 1 */
+
+  /* USER CODE END CRC_Init 1 */
+  hcrc.Instance = CRC;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CRC_Init 2 */
+
+  /* USER CODE END CRC_Init 2 */
+
 }
 
 /**
@@ -524,44 +524,78 @@ static void JumpToApplication(uint32_t image_start,
     reset_handler();
 }
 
-/**
- * @brief  Update Active Image metadata in Sector 2.
- * @param  digest SHA-256 digest of the Active Image.
- * @retval HAL_OK if metadata was erased and programmed successfully.
- */
-static HAL_StatusTypeDef UpdateActiveMetadata(
-    const uint8_t *digest)
+static firmware_slot_t GetOtherSlot(firmware_slot_t slot)
 {
-    firmware_metadata_t metadata;
-    HAL_StatusTypeDef status;
+    return (slot == FIRMWARE_SLOT_A) ?
+           FIRMWARE_SLOT_B :
+           FIRMWARE_SLOT_A;
+}
 
-    if (digest == NULL)
+static uint32_t GetSlotImageStart(firmware_slot_t slot)
+{
+    return (slot == FIRMWARE_SLOT_A) ?
+           SLOT_A_IMAGE_START :
+           SLOT_B_IMAGE_START;
+}
+
+static uint32_t GetSlotImageRegionEnd(firmware_slot_t slot)
+{
+    return (slot == FIRMWARE_SLOT_A) ?
+           SLOT_A_IMAGE_REGION_END :
+           SLOT_B_IMAGE_REGION_END;
+}
+
+static HAL_StatusTypeDef FindConfirmedSlot(
+    const firmware_metadata_t *slot_a_metadata,
+    const firmware_metadata_t *slot_b_metadata,
+    bool slot_a_read_ok,
+    bool slot_b_read_ok,
+    firmware_slot_t *confirmed_slot)
+{
+    bool slot_a_confirmed = false;
+    bool slot_b_confirmed = false;
+
+    if (confirmed_slot == NULL)
     {
         return HAL_ERROR;
     }
 
-    metadata.magic = FIRMWARE_METADATA_MAGIC;
-    metadata.image_size = APP_IMAGE_SIZE;
-    metadata.version = 0U;
-
-    memcpy(metadata.sha256,
-           digest,
-           SHA256_DIGEST_SIZE);
-
-    metadata.update_state = 2U;
-
-    status = FlashStorage_EraseSector(
-        FLASH_SECTOR_2,
-        FLASH_VOLTAGE_RANGE_3);
-
-    if (status != HAL_OK)
+    if (slot_a_read_ok &&
+        (slot_a_metadata->update_state == FIRMWARE_STATE_CONFIRMED))
     {
-        return status;
+        slot_a_confirmed = true;
     }
 
-    return FlashStorage_ProgramMetadata(
-        FLASH_ACTIVE_METADATA_ADDRESS,
-        &metadata);
+    if (slot_b_read_ok &&
+        (slot_b_metadata->update_state == FIRMWARE_STATE_CONFIRMED))
+    {
+        slot_b_confirmed = true;
+    }
+
+    /*
+     * Both slots cannot be CONFIRMED simultaneously.
+     */
+    if (slot_a_confirmed && slot_b_confirmed)
+    {
+        return HAL_ERROR;
+    }
+
+    if (slot_a_confirmed)
+    {
+        *confirmed_slot = FIRMWARE_SLOT_A;
+        return HAL_OK;
+    }
+
+    if (slot_b_confirmed)
+    {
+        *confirmed_slot = FIRMWARE_SLOT_B;
+        return HAL_OK;
+    }
+
+    /*
+     * No confirmed firmware available.
+     */
+    return HAL_ERROR;
 }
 
 /**

@@ -125,6 +125,27 @@ void Error_Handler(void);
 #define MEMS_INT2_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
+#define SRAM_START_ADDRESS             0x20000000U
+#define SRAM_END_ADDRESS               0x20020000U
+
+#define SLOT_A_METADATA_ADDRESS        0x08008000U
+#define SLOT_B_METADATA_ADDRESS        0x0800C000U
+
+#define DOWNLOAD_START_ADDRESS         0x08010000U
+#define DOWNLOAD_REGION_END            0x08020000U
+
+#define SLOT_A_IMAGE_START             0x08020000U
+#define SLOT_A_IMAGE_REGION_END        0x08040000U
+
+#define SLOT_B_IMAGE_START             0x08040000U
+#define SLOT_B_IMAGE_REGION_END        0x08060000U
+
+typedef enum
+{
+    FIRMWARE_SLOT_A = 0U,
+    FIRMWARE_SLOT_B
+
+} firmware_slot_t;
 
 /* USER CODE END Private defines */
 
