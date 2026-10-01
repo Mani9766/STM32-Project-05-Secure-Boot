@@ -8,8 +8,7 @@
 #include "metadata.h"
 
 #include <stddef.h>
-
-#include "stm32f4xx_hal.h"
+#include <string.h>
 
 extern CRC_HandleTypeDef hcrc;
 
@@ -62,12 +61,8 @@ uint32_t Metadata_CalculateRecordCRC(
     }
 
     /*
-     * Calculate CRC over:
-     * record_magic
-     * sequence
-     * metadata
-     *
-     * Do not include metadata_crc or commit_marker.
+     * CRC covers sequence + firmware metadata.
+     * metadata_crc and commit_marker are excluded.
      */
     crc_data_length =
         offsetof(
@@ -91,26 +86,13 @@ bool Metadata_ValidateRecord(
     }
 
     /*
-     * Verify record identification.
-     */
-    if (record->record_magic != METADATA_RECORD_MAGIC)
-    {
-        return false;
-    }
-
-    /*
      * Commit marker is written last.
-     * An incomplete/erased record will not contain
-     * the expected commit marker.
      */
     if (record->commit_marker != METADATA_COMMIT_MARKER)
     {
         return false;
     }
 
-    /*
-     * Verify record contents.
-     */
     calculated_crc =
         Metadata_CalculateRecordCRC(record);
 
@@ -126,14 +108,65 @@ bool Metadata_IsSequenceNewer(
     uint32_t current_sequence,
     uint32_t new_sequence)
 {
-    /*
-     * Sequence numbers are monotonically increasing.
-     *
-     * Signed subtraction also handles wrap-around correctly
-     * as long as the distance between two valid sequence
-     * numbers is less than 2^31.
-     */
     return ((int32_t)(new_sequence - current_sequence) > 0);
+}
+
+static bool Metadata_IsRecordErased(
+    const firmware_metadata_record_t *record)
+{
+    const uint32_t *data;
+
+    if (record == NULL)
+    {
+        return false;
+    }
+
+    data = (const uint32_t *)record;
+
+    for (size_t i = 0U;
+         i < (sizeof(firmware_metadata_record_t) /
+              sizeof(uint32_t));
+         i++)
+    {
+        if (data[i] != 0xFFFFFFFFU)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool Metadata_FindNextRecordAddress(
+    uintptr_t sector_start,
+    uintptr_t sector_end,
+    uintptr_t *record_address)
+{
+    firmware_metadata_record_t record;
+    uintptr_t address;
+
+    if ((record_address == NULL) ||
+        (sector_start >= sector_end))
+    {
+        return false;
+    }
+
+    for (address = sector_start;
+         (address + sizeof(firmware_metadata_record_t)) <=
+         sector_end;
+         address += sizeof(firmware_metadata_record_t))
+    {
+        record =
+            *(const firmware_metadata_record_t *)address;
+
+        if (Metadata_IsRecordErased(&record))
+        {
+            *record_address = address;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool Metadata_ReadLatestRecord(
@@ -151,31 +184,19 @@ bool Metadata_ReadLatestRecord(
         return false;
     }
 
-    /*
-     * Metadata records are fixed-size and must fit completely
-     * inside the metadata sector.
-     */
     for (address = sector_start;
-         (address + sizeof(firmware_metadata_record_t)) <= sector_end;
+         (address + sizeof(firmware_metadata_record_t)) <=
+         sector_end;
          address += sizeof(firmware_metadata_record_t))
     {
-        /*
-         * Read one record directly from Flash.
-         */
         record =
             *(const firmware_metadata_record_t *)address;
 
-        /*
-         * Ignore erased, incomplete, or corrupted records.
-         */
         if (!Metadata_ValidateRecord(&record))
         {
             continue;
         }
 
-        /*
-         * First valid record becomes the initial candidate.
-         */
         if (!found_valid_record)
         {
             *latest_record = record;
@@ -183,9 +204,6 @@ bool Metadata_ReadLatestRecord(
             continue;
         }
 
-        /*
-         * Keep the record with the newest sequence number.
-         */
         if (Metadata_IsSequenceNewer(
                 latest_record->sequence,
                 record.sequence))
@@ -195,4 +213,139 @@ bool Metadata_ReadLatestRecord(
     }
 
     return found_valid_record;
+}
+
+HAL_StatusTypeDef Metadata_WriteRecord(
+    uintptr_t sector_start,
+    uintptr_t sector_end,
+    const firmware_metadata_t *metadata)
+{
+    firmware_metadata_record_t latest_record;
+    firmware_metadata_record_t new_record;
+
+    uintptr_t record_address;
+    bool latest_record_found;
+
+    uint32_t next_sequence;
+    uint32_t data;
+    HAL_StatusTypeDef status;
+
+    if ((metadata == NULL) ||
+        (sector_start >= sector_end))
+    {
+        return HAL_ERROR;
+    }
+
+    latest_record_found =
+        Metadata_ReadLatestRecord(
+            sector_start,
+            sector_end,
+            &latest_record);
+
+    if (latest_record_found)
+    {
+        next_sequence =
+            latest_record.sequence + 1U;
+    }
+    else
+    {
+        next_sequence = 1U;
+    }
+
+    if (!Metadata_FindNextRecordAddress(
+            sector_start,
+            sector_end,
+            &record_address))
+    {
+        /*
+         * Sector is full.
+         * Reclamation will be handled separately.
+         */
+        return HAL_ERROR;
+    }
+
+    memset(
+        &new_record,
+        0xFF,
+        sizeof(new_record));
+
+    new_record.sequence = next_sequence;
+    new_record.metadata = *metadata;
+
+    new_record.metadata_crc =
+        Metadata_CalculateRecordCRC(&new_record);
+
+    /*
+     * commit_marker remains erased.
+     * It is programmed last.
+     */
+
+    HAL_FLASH_Unlock();
+
+    /*
+     * Program sequence + metadata + CRC.
+     * This is 56 bytes = 14 words.
+     */
+    for (uint32_t offset = 0U;
+         offset < offsetof(
+             firmware_metadata_record_t,
+             commit_marker);
+         offset += sizeof(uint32_t))
+    {
+        memcpy(
+            &data,
+            ((const uint8_t *)&new_record) + offset,
+            sizeof(uint32_t));
+
+        status = HAL_FLASH_Program(
+            FLASH_TYPEPROGRAM_WORD,
+            (uint32_t)(record_address + offset),
+            data);
+
+        if (status != HAL_OK)
+        {
+            HAL_FLASH_Lock();
+            return status;
+        }
+
+        if (*(volatile uint32_t *)
+                (record_address + offset) != data)
+        {
+            HAL_FLASH_Lock();
+            return HAL_ERROR;
+        }
+    }
+
+    /*
+     * Commit marker is programmed LAST.
+     */
+    status = HAL_FLASH_Program(
+        FLASH_TYPEPROGRAM_WORD,
+        (uint32_t)(
+            record_address +
+            offsetof(
+                firmware_metadata_record_t,
+                commit_marker)),
+        METADATA_COMMIT_MARKER);
+
+    if (status != HAL_OK)
+    {
+        HAL_FLASH_Lock();
+        return status;
+    }
+
+    if (*(volatile uint32_t *)
+            (record_address +
+             offsetof(
+                 firmware_metadata_record_t,
+                 commit_marker))
+        != METADATA_COMMIT_MARKER)
+    {
+        HAL_FLASH_Lock();
+        return HAL_ERROR;
+    }
+
+    HAL_FLASH_Lock();
+
+    return HAL_OK;
 }

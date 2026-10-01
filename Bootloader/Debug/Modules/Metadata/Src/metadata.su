@@ -1,5 +1,8 @@
-../Modules/Metadata/Src/metadata.c:16:6:Metadata_Validate	32	static
-../Modules/Metadata/Src/metadata.c:54:10:Metadata_CalculateRecordCRC	24	static
-../Modules/Metadata/Src/metadata.c:83:6:Metadata_ValidateRecord	24	static
-../Modules/Metadata/Src/metadata.c:125:6:Metadata_IsSequenceNewer	16	static
-../Modules/Metadata/Src/metadata.c:139:6:Metadata_ReadLatestRecord	104	static
+../Modules/Metadata/Src/metadata.c:15:6:Metadata_Validate	32	static
+../Modules/Metadata/Src/metadata.c:53:10:Metadata_CalculateRecordCRC	24	static
+../Modules/Metadata/Src/metadata.c:78:6:Metadata_ValidateRecord	24	static
+../Modules/Metadata/Src/metadata.c:107:6:Metadata_IsSequenceNewer	16	static
+../Modules/Metadata/Src/metadata.c:114:13:Metadata_IsRecordErased	24	static
+../Modules/Metadata/Src/metadata.c:140:13:Metadata_FindNextRecordAddress	96	static
+../Modules/Metadata/Src/metadata.c:172:6:Metadata_ReadLatestRecord	104	static
+../Modules/Metadata/Src/metadata.c:218:19:Metadata_WriteRecord	184	static

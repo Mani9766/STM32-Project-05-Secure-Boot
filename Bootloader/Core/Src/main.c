@@ -65,10 +65,10 @@ static uint32_t GetSlotImageStart(firmware_slot_t slot);
 static uint32_t GetSlotImageRegionEnd(firmware_slot_t slot);
 
 static HAL_StatusTypeDef FindConfirmedSlot(
-    const firmware_metadata_t *slot_a_metadata,
-    const firmware_metadata_t *slot_b_metadata,
-    bool slot_a_read_ok,
-    bool slot_b_read_ok,
+    const firmware_metadata_record_t *slot_a_record,
+    const firmware_metadata_record_t *slot_b_record,
+    bool slot_a_record_valid,
+    bool slot_b_record_valid,
     firmware_slot_t *confirmed_slot);
 
 static void Bootloader_FailSafe(void);
@@ -92,20 +92,23 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  firmware_metadata_t slot_a_metadata;
-  firmware_metadata_t slot_b_metadata;
+	firmware_metadata_record_t slot_a_record;
+	firmware_metadata_record_t slot_b_record;
 
-  HAL_StatusTypeDef status;
+	bool slot_a_record_valid = false;
+	bool slot_b_record_valid = false;
 
-  firmware_slot_t active_slot;
-  firmware_slot_t inactive_slot;
+	HAL_StatusTypeDef status;
 
-  const firmware_metadata_t *active_metadata;
+	firmware_slot_t active_slot;
+	firmware_slot_t inactive_slot;
 
-  uint8_t active_digest[SHA256_DIGEST_SIZE];
+	const firmware_metadata_t *active_metadata;
 
-  uint32_t active_image_start;
-  uint32_t active_image_end;
+	uint8_t active_digest[SHA256_DIGEST_SIZE];
+
+	uint32_t active_image_start;
+	uint32_t active_image_end;
 
   /* USER CODE END 1 */
 
@@ -129,41 +132,38 @@ int main(void)
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 
-  /* Read Slot A Metadata */
-  status = FlashStorage_ReadMetadata(
-      SLOT_A_METADATA_ADDRESS,
-      &slot_a_metadata);
+  /* Read latest committed Slot A metadata record */
+  slot_a_record_valid =
+      Metadata_ReadLatestRecord(
+          SLOT_A_METADATA_ADDRESS,
+          SLOT_A_METADATA_REGION_END,
+          &slot_a_record);
 
-  bool slot_a_metadata_read_ok = (status == HAL_OK);
-
-  if (!slot_a_metadata_read_ok)
+  if (!slot_a_record_valid)
   {
-      printf("Failed to read Slot A metadata\r\n");
+      printf("No valid Slot A metadata record\r\n");
   }
 
-  /* Read Slot B metadata */
-  status = FlashStorage_ReadMetadata(
-      SLOT_B_METADATA_ADDRESS,
-      &slot_b_metadata);
+  /* Read latest committed Slot B metadata record */
+  slot_b_record_valid =
+      Metadata_ReadLatestRecord(
+          SLOT_B_METADATA_ADDRESS,
+          SLOT_B_METADATA_REGION_END,
+          &slot_b_record);
 
-  bool slot_b_metadata_read_ok = (status == HAL_OK);
-
-  if (!slot_b_metadata_read_ok)
+  if (!slot_b_record_valid)
   {
-      printf("Failed to read Slot B metadata\r\n");
+      printf("No valid Slot B metadata record\r\n");
   }
 
   /*
    * Determine the currently confirmed firmware slot.
-   *
-   * Metadata validation is intentionally performed only
-   * after the confirmed slot has been identified.
    */
   status = FindConfirmedSlot(
-      &slot_a_metadata,
-      &slot_b_metadata,
-      slot_a_metadata_read_ok,
-      slot_b_metadata_read_ok,
+      &slot_a_record,
+      &slot_b_record,
+      slot_a_record_valid,
+      slot_b_record_valid,
       &active_slot);
 
   if (status != HAL_OK)
@@ -172,7 +172,9 @@ int main(void)
       Bootloader_FailSafe();
   }
 
-  /* The other slot is currently inactive */
+  /*
+   * The other slot is currently inactive.
+   */
   inactive_slot = GetOtherSlot(active_slot);
 
   printf(
@@ -188,11 +190,12 @@ int main(void)
    */
   active_metadata =
       (active_slot == FIRMWARE_SLOT_A) ?
-      &slot_a_metadata :
-      &slot_b_metadata;
+      &slot_a_record.metadata :
+      &slot_b_record.metadata;
 
   /*
-   * Validate the confirmed slot metadata.
+   * Validate only the confirmed slot metadata
+   * against its fixed memory region.
    */
   if (!Metadata_Validate(
           active_metadata,
@@ -203,7 +206,9 @@ int main(void)
       Bootloader_FailSafe();
   }
 
-  /* Get confirmed firmware address */
+  /*
+   * Get confirmed firmware image address.
+   */
   active_image_start =
       GetSlotImageStart(active_slot);
 
@@ -546,10 +551,10 @@ static uint32_t GetSlotImageRegionEnd(firmware_slot_t slot)
 }
 
 static HAL_StatusTypeDef FindConfirmedSlot(
-    const firmware_metadata_t *slot_a_metadata,
-    const firmware_metadata_t *slot_b_metadata,
-    bool slot_a_read_ok,
-    bool slot_b_read_ok,
+    const firmware_metadata_record_t *slot_a_record,
+    const firmware_metadata_record_t *slot_b_record,
+    bool slot_a_record_valid,
+    bool slot_b_record_valid,
     firmware_slot_t *confirmed_slot)
 {
     bool slot_a_confirmed = false;
@@ -560,14 +565,16 @@ static HAL_StatusTypeDef FindConfirmedSlot(
         return HAL_ERROR;
     }
 
-    if (slot_a_read_ok &&
-        (slot_a_metadata->update_state == FIRMWARE_STATE_CONFIRMED))
+    if (slot_a_record_valid &&
+        (slot_a_record->metadata.update_state ==
+         FIRMWARE_STATE_CONFIRMED))
     {
         slot_a_confirmed = true;
     }
 
-    if (slot_b_read_ok &&
-        (slot_b_metadata->update_state == FIRMWARE_STATE_CONFIRMED))
+    if (slot_b_record_valid &&
+        (slot_b_record->metadata.update_state ==
+         FIRMWARE_STATE_CONFIRMED))
     {
         slot_b_confirmed = true;
     }
@@ -593,7 +600,7 @@ static HAL_StatusTypeDef FindConfirmedSlot(
     }
 
     /*
-     * No confirmed firmware available.
+     * No confirmed slot is available.
      */
     return HAL_ERROR;
 }

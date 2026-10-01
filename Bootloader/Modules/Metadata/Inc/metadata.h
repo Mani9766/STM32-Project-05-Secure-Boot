@@ -11,10 +11,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "stm32f4xx_hal.h"
 #include "sha256.h"
 
 #define FIRMWARE_METADATA_MAGIC    0xDEADBEEFU
-#define METADATA_RECORD_MAGIC      0x4D455441U
 #define METADATA_COMMIT_MARKER     0xA5A55A5AU
 
 typedef enum
@@ -41,13 +41,16 @@ typedef struct
 
 typedef struct
 {
-    uint32_t record_magic;
     uint32_t sequence;
     firmware_metadata_t metadata;
     uint32_t metadata_crc;
     uint32_t commit_marker;
 
 } firmware_metadata_record_t;
+
+_Static_assert(
+    sizeof(firmware_metadata_record_t) == 60U,
+    "Unexpected firmware metadata record size");
 
 bool Metadata_Validate(
     const firmware_metadata_t *metadata,
@@ -68,5 +71,10 @@ bool Metadata_ReadLatestRecord(
     uintptr_t sector_start,
     uintptr_t sector_end,
     firmware_metadata_record_t *latest_record);
+
+HAL_StatusTypeDef Metadata_WriteRecord(
+    uintptr_t sector_start,
+    uintptr_t sector_end,
+    const firmware_metadata_t *metadata);
 
 #endif /* METADATA_H */

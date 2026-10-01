@@ -1,5 +1,8 @@
-../Modules/Metadata/Src/metadata.c:16:6:Metadata_Validate	6
-../Modules/Metadata/Src/metadata.c:54:10:Metadata_CalculateRecordCRC	2
-../Modules/Metadata/Src/metadata.c:83:6:Metadata_ValidateRecord	5
-../Modules/Metadata/Src/metadata.c:125:6:Metadata_IsSequenceNewer	1
-../Modules/Metadata/Src/metadata.c:139:6:Metadata_ReadLatestRecord	7
+../Modules/Metadata/Src/metadata.c:15:6:Metadata_Validate	6
+../Modules/Metadata/Src/metadata.c:53:10:Metadata_CalculateRecordCRC	2
+../Modules/Metadata/Src/metadata.c:78:6:Metadata_ValidateRecord	4
+../Modules/Metadata/Src/metadata.c:107:6:Metadata_IsSequenceNewer	1
+../Modules/Metadata/Src/metadata.c:114:13:Metadata_IsRecordErased	4
+../Modules/Metadata/Src/metadata.c:140:13:Metadata_FindNextRecordAddress	5
+../Modules/Metadata/Src/metadata.c:172:6:Metadata_ReadLatestRecord	7
+../Modules/Metadata/Src/metadata.c:218:19:Metadata_WriteRecord	10
