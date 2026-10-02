@@ -75,6 +75,8 @@ bool Metadata_ReadLatestRecord(
 HAL_StatusTypeDef Metadata_WriteRecord(
     uintptr_t sector_start,
     uintptr_t sector_end,
+    uint32_t flash_sector,
+    uint32_t voltage_range,
     const firmware_metadata_t *metadata);
 
 #endif /* METADATA_H */

@@ -71,6 +71,20 @@ static HAL_StatusTypeDef FindConfirmedSlot(
     bool slot_b_record_valid,
     firmware_slot_t *confirmed_slot);
 
+static HAL_StatusTypeDef UpdateSlotState(
+    firmware_slot_t slot,
+    firmware_metadata_record_t *record,
+    firmware_update_state_t new_state);
+
+static HAL_StatusTypeDef ProcessPendingValidation(
+    firmware_slot_t pending_slot,
+    firmware_metadata_record_t *pending_record,
+    const firmware_metadata_record_t *confirmed_record);
+
+static HAL_StatusTypeDef PromoteValidatedFirmware(
+    firmware_slot_t slot,
+    firmware_metadata_record_t *record);
+
 static void Bootloader_FailSafe(void);
 
 /* USER CODE END PFP */
@@ -91,12 +105,19 @@ int __io_putchar(int ch)
 int main(void)
 {
 
-  /* USER CODE BEGIN 1 */
+	/* USER CODE BEGIN 1 */
+
 	firmware_metadata_record_t slot_a_record;
 	firmware_metadata_record_t slot_b_record;
 
 	bool slot_a_record_valid = false;
 	bool slot_b_record_valid = false;
+
+	bool slot_a_pending = false;
+	bool slot_b_pending = false;
+
+	bool slot_a_validated = false;
+	bool slot_b_validated = false;
 
 	HAL_StatusTypeDef status;
 
@@ -110,7 +131,7 @@ int main(void)
 	uint32_t active_image_start;
 	uint32_t active_image_end;
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -186,8 +207,147 @@ int main(void)
       (inactive_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
   /*
-   * Select metadata belonging to the confirmed slot.
+   * Detect a pending firmware update.
+   *
+   * At most one slot may be PENDING_VALIDATION.
    */
+  slot_a_pending =
+      slot_a_record_valid &&
+      (slot_a_record.metadata.update_state ==
+       FIRMWARE_STATE_PENDING_VALIDATION);
+
+  slot_b_pending =
+      slot_b_record_valid &&
+      (slot_b_record.metadata.update_state ==
+       FIRMWARE_STATE_PENDING_VALIDATION);
+
+  if (slot_a_pending && slot_b_pending)
+  {
+      printf("Invalid state: both slots are pending validation\r\n");
+      Bootloader_FailSafe();
+  }
+
+  if (slot_a_pending || slot_b_pending)
+  {
+      firmware_slot_t pending_slot;
+
+      firmware_metadata_record_t *pending_record;
+
+      const firmware_metadata_record_t *confirmed_record;
+
+      if (slot_a_pending)
+      {
+          pending_slot = FIRMWARE_SLOT_A;
+          pending_record = &slot_a_record;
+      }
+      else
+      {
+          pending_slot = FIRMWARE_SLOT_B;
+          pending_record = &slot_b_record;
+      }
+
+      confirmed_record =
+          (active_slot == FIRMWARE_SLOT_A) ?
+          &slot_a_record :
+          &slot_b_record;
+
+      status = ProcessPendingValidation(
+          pending_slot,
+          pending_record,
+          confirmed_record);
+
+      if (status != HAL_OK)
+      {
+          printf("Pending firmware validation processing failed\r\n");
+          Bootloader_FailSafe();
+      }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * Process VALIDATED firmware here
+   * ---------------------------------------------------------
+   */
+
+  slot_a_validated =
+      slot_a_record_valid &&
+      (slot_a_record.metadata.update_state ==
+       FIRMWARE_STATE_VALIDATED);
+
+  slot_b_validated =
+      slot_b_record_valid &&
+      (slot_b_record.metadata.update_state ==
+       FIRMWARE_STATE_VALIDATED);
+
+  if (slot_a_validated && slot_b_validated)
+  {
+      printf("Invalid state: both slots are VALIDATED\r\n");
+      Bootloader_FailSafe();
+  }
+
+  if (slot_a_validated || slot_b_validated)
+  {
+      firmware_slot_t validated_slot;
+      firmware_metadata_record_t *validated_record;
+
+      if (slot_a_validated)
+      {
+          validated_slot = FIRMWARE_SLOT_A;
+          validated_record = &slot_a_record;
+      }
+      else
+      {
+          validated_slot = FIRMWARE_SLOT_B;
+          validated_record = &slot_b_record;
+      }
+
+      /*
+       * A validated firmware must always be the inactive slot.
+       */
+      if (validated_slot == active_slot)
+      {
+          printf("Invalid state: active slot is VALIDATED\r\n");
+          Bootloader_FailSafe();
+      }
+
+      printf(
+          "Validated firmware found in Slot %s\r\n",
+          (validated_slot == FIRMWARE_SLOT_A) ? "A" : "B");
+
+      status = PromoteValidatedFirmware(
+          validated_slot,
+          validated_record);
+
+      if (status == HAL_OK)
+      {
+          uint32_t trial_image_start;
+          uint32_t trial_image_end;
+
+          trial_image_start =
+              GetSlotImageStart(validated_slot);
+
+          trial_image_end =
+              trial_image_start +
+              validated_record->metadata.image_size;
+
+          printf(
+              "Starting trial boot from Slot %s\r\n",
+              (validated_slot == FIRMWARE_SLOT_A) ? "A" : "B");
+
+          JumpToApplication(
+              trial_image_start,
+              trial_image_end);
+      }
+
+      printf("Firmware promotion failed\r\n");
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * Normal boot of confirmed firmware
+   * ---------------------------------------------------------
+   */
+
   active_metadata =
       (active_slot == FIRMWARE_SLOT_A) ?
       &slot_a_record.metadata :
@@ -603,6 +763,309 @@ static HAL_StatusTypeDef FindConfirmedSlot(
      * No confirmed slot is available.
      */
     return HAL_ERROR;
+}
+
+static HAL_StatusTypeDef UpdateSlotState(
+    firmware_slot_t slot,
+    firmware_metadata_record_t *record,
+    firmware_update_state_t new_state)
+{
+    firmware_metadata_t new_metadata;
+    HAL_StatusTypeDef status;
+
+    if (record == NULL)
+    {
+        return HAL_ERROR;
+    }
+
+    new_metadata = record->metadata;
+    new_metadata.update_state = new_state;
+
+    if (slot == FIRMWARE_SLOT_A)
+    {
+        status = Metadata_WriteRecord(
+            SLOT_A_METADATA_ADDRESS,
+            SLOT_A_METADATA_REGION_END,
+            FLASH_SECTOR_2,
+            FLASH_VOLTAGE_RANGE_3,
+            &new_metadata);
+    }
+    else
+    {
+        status = Metadata_WriteRecord(
+            SLOT_B_METADATA_ADDRESS,
+            SLOT_B_METADATA_REGION_END,
+            FLASH_SECTOR_3,
+            FLASH_VOLTAGE_RANGE_3,
+            &new_metadata);
+    }
+
+    if (status != HAL_OK)
+    {
+        return status;
+    }
+
+    /*
+     * Refresh the local record so it represents the newly
+     * committed metadata record.
+     */
+    if (slot == FIRMWARE_SLOT_A)
+    {
+        if (!Metadata_ReadLatestRecord(
+                SLOT_A_METADATA_ADDRESS,
+                SLOT_A_METADATA_REGION_END,
+                record))
+        {
+            return HAL_ERROR;
+        }
+    }
+    else
+    {
+        if (!Metadata_ReadLatestRecord(
+                SLOT_B_METADATA_ADDRESS,
+                SLOT_B_METADATA_REGION_END,
+                record))
+        {
+            return HAL_ERROR;
+        }
+    }
+
+    return HAL_OK;
+}
+
+static HAL_StatusTypeDef ProcessPendingValidation(
+    firmware_slot_t pending_slot,
+    firmware_metadata_record_t *pending_record,
+    const firmware_metadata_record_t *confirmed_record)
+{
+    uint8_t staged_digest[SHA256_DIGEST_SIZE];
+
+    if ((pending_record == NULL) ||
+        (confirmed_record == NULL))
+    {
+        return HAL_ERROR;
+    }
+
+    printf(
+        "Processing pending firmware in Slot %s\r\n",
+        (pending_slot == FIRMWARE_SLOT_A) ? "A" : "B");
+
+    /*
+     * The staged image must fit inside the download/staging area.
+     */
+    if (!Metadata_Validate(
+            &pending_record->metadata,
+            DOWNLOAD_START_ADDRESS,
+            DOWNLOAD_REGION_END))
+    {
+        printf("Invalid staged firmware metadata\r\n");
+
+        return UpdateSlotState(
+            pending_slot,
+            pending_record,
+            FIRMWARE_STATE_INVALID);
+    }
+
+    /*
+     * Reject firmware that is not newer than the currently
+     * confirmed firmware.
+     */
+    if (pending_record->metadata.version <=
+        confirmed_record->metadata.version)
+    {
+        printf("Staged firmware is not newer\r\n");
+
+        return UpdateSlotState(
+            pending_slot,
+            pending_record,
+            FIRMWARE_STATE_INVALID);
+    }
+
+    printf(
+        "Staged firmware version: %lu\r\n",
+        (unsigned long)pending_record->metadata.version);
+
+    printf("Calculating staged firmware SHA-256\r\n");
+
+    ImageValidation_CalculateSHA256(
+        DOWNLOAD_START_ADDRESS,
+        pending_record->metadata.image_size,
+        staged_digest);
+
+    if (!ImageValidation_VerifySHA256(
+            staged_digest,
+            pending_record->metadata.sha256))
+    {
+        printf("Staged firmware SHA-256 mismatch\r\n");
+
+        return UpdateSlotState(
+            pending_slot,
+            pending_record,
+            FIRMWARE_STATE_INVALID);
+    }
+
+    printf("Staged firmware SHA-256 matched\r\n");
+
+    /*
+     * The firmware is valid and can now be promoted
+     * into the inactive slot.
+     *
+     * Promotion itself is handled by the next task.
+     */
+    return UpdateSlotState(
+        pending_slot,
+        pending_record,
+        FIRMWARE_STATE_VALIDATED);
+}
+
+static HAL_StatusTypeDef PromoteValidatedFirmware(
+    firmware_slot_t slot,
+    firmware_metadata_record_t *record)
+{
+    uint32_t destination_start;
+    uint32_t destination_region_end;
+
+    uint32_t flash_sector;
+
+    uint8_t destination_digest[SHA256_DIGEST_SIZE];
+
+    HAL_StatusTypeDef status;
+
+    if (record == NULL)
+    {
+        return HAL_ERROR;
+    }
+
+    if (record->metadata.update_state !=
+        FIRMWARE_STATE_VALIDATED)
+    {
+        return HAL_ERROR;
+    }
+
+    /*
+     * The validated image is still stored in the
+     * download/staging region.
+     */
+    if (!Metadata_Validate(
+            &record->metadata,
+            DOWNLOAD_START_ADDRESS,
+            DOWNLOAD_REGION_END))
+    {
+        printf("Invalid staged firmware metadata\r\n");
+        return HAL_ERROR;
+    }
+
+    destination_start =
+        GetSlotImageStart(slot);
+
+    destination_region_end =
+        GetSlotImageRegionEnd(slot);
+
+    /*
+     * The same image must fit into the destination slot.
+     */
+    if (!Metadata_Validate(
+            &record->metadata,
+            destination_start,
+            destination_region_end))
+    {
+        printf("Firmware does not fit destination slot\r\n");
+        return HAL_ERROR;
+    }
+
+    flash_sector =
+        (slot == FIRMWARE_SLOT_A) ?
+        FLASH_SECTOR_5 :
+        FLASH_SECTOR_6;
+
+    printf(
+        "Promoting staged firmware to Slot %s\r\n",
+        (slot == FIRMWARE_SLOT_A) ? "A" : "B");
+
+    /*
+     * Erase the inactive firmware slot.
+     */
+    printf("Erasing destination slot\r\n");
+
+    status = FlashStorage_EraseSector(
+        flash_sector,
+        FLASH_VOLTAGE_RANGE_3);
+
+    if (status != HAL_OK)
+    {
+        printf("Failed to erase destination slot\r\n");
+        return status;
+    }
+
+    /*
+     * Copy firmware from staging area into the
+     * selected inactive slot.
+     */
+    printf("Programming destination slot\r\n");
+
+    status = FlashStorage_ProgramImage(
+        destination_start,
+        DOWNLOAD_START_ADDRESS,
+        record->metadata.image_size);
+
+    if (status != HAL_OK)
+    {
+        printf("Failed to program destination slot\r\n");
+
+        /*
+         * Keep VALIDATED state.
+         * The staging image is still available and
+         * promotion can be retried after reset.
+         */
+        return status;
+    }
+
+    /*
+     * Independently calculate SHA-256 of the image
+     * after programming.
+     */
+    printf("Verifying programmed destination SHA-256\r\n");
+
+    ImageValidation_CalculateSHA256(
+        destination_start,
+        record->metadata.image_size,
+        destination_digest);
+
+    if (!ImageValidation_VerifySHA256(
+            destination_digest,
+            record->metadata.sha256))
+    {
+        printf("Destination SHA-256 mismatch\r\n");
+
+        /*
+         * Keep VALIDATED state.
+         * The failed destination can be erased and
+         * programmed again on the next attempt.
+         */
+        return HAL_ERROR;
+    }
+
+    printf("Destination SHA-256 matched\r\n");
+
+    /*
+     * Destination image is now programmed and verified.
+     * It is ready for trial boot.
+     */
+    status = UpdateSlotState(
+        slot,
+        record,
+        FIRMWARE_STATE_BOOT_PENDING);
+
+    if (status != HAL_OK)
+    {
+        printf("Failed to set BOOT_PENDING state\r\n");
+        return status;
+    }
+
+    printf("Slot %s is now BOOT_PENDING\r\n",
+           (slot == FIRMWARE_SLOT_A) ? "A" : "B");
+
+    return HAL_OK;
 }
 
 /**

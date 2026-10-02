@@ -125,7 +125,11 @@ void Error_Handler(void);
 #define MEMS_INT2_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
+#define SLOT_B_METADATA_ADDRESS        0x0800C000U
+#define SLOT_B_METADATA_REGION_END     0x08010000U
 
+#define SLOT_B_IMAGE_START             0x08040000U
+#define SLOT_B_IMAGE_REGION_END        0x08060000U
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

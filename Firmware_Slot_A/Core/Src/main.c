@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include "sha256.h"
 #include "metadata.h"
 #include "flash_storage.h"
 /* USER CODE END Includes */
@@ -45,20 +44,20 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+CRC_HandleTypeDef hcrc;
+
+IWDG_HandleTypeDef hiwdg;
 
 /* USER CODE BEGIN PV */
-extern uint8_t _candidate_image_start;
-extern uint8_t _candidate_image_end;
-
-uint8_t digest[SHA256_DIGEST_SIZE];
-SHA256_Context ctx;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_CRC_Init(void);
+static void MX_IWDG_Init(void);
 /* USER CODE BEGIN PFP */
-
+static HAL_StatusTypeDef Firmware_Confirm(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -74,11 +73,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  uintptr_t candidate_start = (uintptr_t)&_candidate_image_start;
-  uintptr_t candidate_end   = (uintptr_t)&_candidate_image_end;
-  uint32_t candidate_size   = (uint32_t)(candidate_end - candidate_start);
-  HAL_StatusTypeDef status;
-  firmware_metadata_t metadata;
+  bool firmware_confirmed = false;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -99,35 +94,22 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_CRC_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
-  SHA256_Init(&ctx);
-  SHA256_Update(&ctx, (const uint8_t *)candidate_start, candidate_size);
-  SHA256_Final(&ctx, digest);
-
-  metadata.magic = FIRMWARE_METADATA_MAGIC;
-  metadata.image_size = candidate_size;
-
-  memcpy(metadata.sha256,
-         digest,
-         SHA256_DIGEST_SIZE);
-
-  metadata.version = 1U;
-  metadata.update_state = CANDIDATE_STATE_PENDING_VALIDATION;
-
-  status = FlashStorage_EraseCandidateMetadataSector();
-
-  if (status != HAL_OK)
+  if (Firmware_Confirm() != HAL_OK)
   {
-      return 1;
+      printf("Slot A firmware confirmation failed\r\n");
+
+      NVIC_SystemReset();
+
+      while (1)
+      {
+          /* Wait for reset */
+      }
   }
 
-  status = FlashStorage_ProgramMetadata(&metadata);
-
-  if (status != HAL_OK)
-  {
-      return 1;
-  }
-
+  firmware_confirmed = true;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -135,9 +117,15 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
-	HAL_Delay(500);
+
     /* USER CODE BEGIN 3 */
+	if (firmware_confirmed)
+	{
+	    HAL_IWDG_Refresh(&hiwdg);
+	}
+
+	HAL_GPIO_TogglePin(GPIOD, LD5_Pin);
+    HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
@@ -159,9 +147,10 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = 8;
@@ -186,6 +175,60 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief CRC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CRC_Init(void)
+{
+
+  /* USER CODE BEGIN CRC_Init 0 */
+
+  /* USER CODE END CRC_Init 0 */
+
+  /* USER CODE BEGIN CRC_Init 1 */
+
+  /* USER CODE END CRC_Init 1 */
+  hcrc.Instance = CRC;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CRC_Init 2 */
+
+  /* USER CODE END CRC_Init 2 */
+
+}
+
+/**
+  * @brief IWDG Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_IWDG_Init(void)
+{
+
+  /* USER CODE BEGIN IWDG_Init 0 */
+
+  /* USER CODE END IWDG_Init 0 */
+
+  /* USER CODE BEGIN IWDG_Init 1 */
+
+  /* USER CODE END IWDG_Init 1 */
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+  hiwdg.Init.Reload = 4095;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN IWDG_Init 2 */
+
+  /* USER CODE END IWDG_Init 2 */
+
 }
 
 /**
@@ -333,7 +376,87 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static HAL_StatusTypeDef Firmware_Confirm(void)
+{
+    firmware_metadata_record_t latest_record;
+    firmware_metadata_t confirmed_metadata;
+    HAL_StatusTypeDef status;
 
+    /* Read the latest Slot A metadata record */
+    if (!Metadata_ReadLatestRecord(
+            SLOT_A_METADATA_ADDRESS,
+            SLOT_A_METADATA_REGION_END,
+            &latest_record))
+    {
+        printf("Slot A metadata read failed\r\n");
+        return HAL_ERROR;
+    }
+
+    /*
+     * A firmware is confirmed only when the bootloader
+     * has promoted it and marked it BOOT_PENDING.
+     */
+    if (latest_record.metadata.update_state ==
+        FIRMWARE_STATE_CONFIRMED)
+    {
+        printf("Slot A firmware already CONFIRMED\r\n");
+        return HAL_OK;
+    }
+
+    if (latest_record.metadata.update_state !=
+        FIRMWARE_STATE_BOOT_PENDING)
+    {
+        printf(
+            "Slot A firmware is not BOOT_PENDING, state: %lu\r\n",
+            (unsigned long)latest_record.metadata.update_state);
+
+        return HAL_ERROR;
+    }
+
+    printf("Slot A trial firmware detected\r\n");
+
+    /* Copy existing metadata and change only the state */
+    confirmed_metadata = latest_record.metadata;
+    confirmed_metadata.update_state = FIRMWARE_STATE_CONFIRMED;
+
+    /*
+     * Append a new metadata record rather than modifying
+     * the existing BOOT_PENDING record.
+     */
+    status = Metadata_WriteRecord(
+        SLOT_A_METADATA_ADDRESS,
+        SLOT_A_METADATA_REGION_END,
+        FLASH_SECTOR_2,
+        FLASH_VOLTAGE_RANGE_3,
+        &confirmed_metadata);
+
+    if (status != HAL_OK)
+    {
+        printf("Slot A confirmation write failed\r\n");
+        return HAL_ERROR;
+    }
+
+    /* Read back and verify the persisted state */
+    if (!Metadata_ReadLatestRecord(
+            SLOT_A_METADATA_ADDRESS,
+            SLOT_A_METADATA_REGION_END,
+            &latest_record))
+    {
+        printf("Slot A confirmation verification failed\r\n");
+        return HAL_ERROR;
+    }
+
+    if (latest_record.metadata.update_state !=
+        FIRMWARE_STATE_CONFIRMED)
+    {
+        printf("Slot A confirmation state mismatch\r\n");
+        return HAL_ERROR;
+    }
+
+    printf("Slot A firmware CONFIRMED\r\n");
+
+    return HAL_OK;
+}
 /* USER CODE END 4 */
 
 /**

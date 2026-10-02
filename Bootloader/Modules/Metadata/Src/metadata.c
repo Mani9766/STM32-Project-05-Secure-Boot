@@ -6,6 +6,7 @@
  */
 
 #include "metadata.h"
+#include "flash_storage.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -218,16 +219,21 @@ bool Metadata_ReadLatestRecord(
 HAL_StatusTypeDef Metadata_WriteRecord(
     uintptr_t sector_start,
     uintptr_t sector_end,
+    uint32_t flash_sector,
+    uint32_t voltage_range,
     const firmware_metadata_t *metadata)
 {
     firmware_metadata_record_t latest_record;
     firmware_metadata_record_t new_record;
 
     uintptr_t record_address;
+
     bool latest_record_found;
+    bool sector_full = false;
 
     uint32_t next_sequence;
     uint32_t data;
+
     HAL_StatusTypeDef status;
 
     if ((metadata == NULL) ||
@@ -236,6 +242,9 @@ HAL_StatusTypeDef Metadata_WriteRecord(
         return HAL_ERROR;
     }
 
+    /*
+     * Find the latest valid metadata record.
+     */
     latest_record_found =
         Metadata_ReadLatestRecord(
             sector_start,
@@ -249,21 +258,66 @@ HAL_StatusTypeDef Metadata_WriteRecord(
     }
     else
     {
+        /*
+         * No valid metadata record exists.
+         */
         next_sequence = 1U;
     }
 
+    /*
+     * Try to find an erased record location.
+     */
     if (!Metadata_FindNextRecordAddress(
             sector_start,
             sector_end,
             &record_address))
     {
-        /*
-         * Sector is full.
-         * Reclamation will be handled separately.
-         */
-        return HAL_ERROR;
+        sector_full = true;
     }
 
+    /*
+     * If the metadata sector is full, erase it and
+     * restart the metadata journal from Record 0.
+     *
+     * Power-loss handling during this erase/rebuild
+     * is outside the current project scope.
+     */
+    if (sector_full)
+    {
+        status =
+            FlashStorage_EraseSector(
+                flash_sector,
+                voltage_range);
+
+        if (status != HAL_OK)
+        {
+            return status;
+        }
+
+        /*
+         * After erase, the first record is at
+         * the beginning of the sector.
+         */
+        record_address = sector_start;
+
+        /*
+         * Preserve sequence continuity across the
+         * sector rollover.
+         */
+        if (latest_record_found)
+        {
+            next_sequence =
+                latest_record.sequence + 1U;
+        }
+        else
+        {
+            next_sequence = 1U;
+        }
+    }
+
+    /*
+     * Build new metadata record in RAM.
+     */
     memset(
         &new_record,
         0xFF,
@@ -272,8 +326,12 @@ HAL_StatusTypeDef Metadata_WriteRecord(
     new_record.sequence = next_sequence;
     new_record.metadata = *metadata;
 
+    /*
+     * Calculate CRC over sequence + metadata.
+     */
     new_record.metadata_crc =
-        Metadata_CalculateRecordCRC(&new_record);
+        Metadata_CalculateRecordCRC(
+            &new_record);
 
     /*
      * commit_marker remains erased.
@@ -284,7 +342,6 @@ HAL_StatusTypeDef Metadata_WriteRecord(
 
     /*
      * Program sequence + metadata + CRC.
-     * This is 56 bytes = 14 words.
      */
     for (uint32_t offset = 0U;
          offset < offsetof(
@@ -308,6 +365,9 @@ HAL_StatusTypeDef Metadata_WriteRecord(
             return status;
         }
 
+        /*
+         * Verify each programmed word.
+         */
         if (*(volatile uint32_t *)
                 (record_address + offset) != data)
         {
@@ -334,6 +394,9 @@ HAL_StatusTypeDef Metadata_WriteRecord(
         return status;
     }
 
+    /*
+     * Verify commit marker.
+     */
     if (*(volatile uint32_t *)
             (record_address +
              offsetof(

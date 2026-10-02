@@ -1,0 +1,8 @@
+../Modules/Metadata/Src/metadata.c:16:6:Metadata_Validate	6
+../Modules/Metadata/Src/metadata.c:54:10:Metadata_CalculateRecordCRC	2
+../Modules/Metadata/Src/metadata.c:79:6:Metadata_ValidateRecord	4
+../Modules/Metadata/Src/metadata.c:108:6:Metadata_IsSequenceNewer	1
+../Modules/Metadata/Src/metadata.c:115:13:Metadata_IsRecordErased	4
+../Modules/Metadata/Src/metadata.c:141:13:Metadata_FindNextRecordAddress	5
+../Modules/Metadata/Src/metadata.c:173:6:Metadata_ReadLatestRecord	7
+../Modules/Metadata/Src/metadata.c:219:19:Metadata_WriteRecord	13
