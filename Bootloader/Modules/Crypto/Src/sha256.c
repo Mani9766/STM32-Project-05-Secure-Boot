@@ -6,6 +6,7 @@
  */
 
 #include "sha256.h"
+#include <stdio.h>
 
 #define ROTR32(x, n) (((x) >> (n)) | ((x) << (32U - (n))))
 
@@ -60,6 +61,9 @@ static void SHA256_Transform(SHA256_Context *ctx, const uint8_t block[64])
     uint32_t e, f, g, h;
 
     uint32_t T1, T2;
+
+    /* For debug */
+    static uint8_t no_of_blocks = 0;
 
     /* Prepare message schedule W[0..63] */
 
@@ -124,6 +128,12 @@ static void SHA256_Transform(SHA256_Context *ctx, const uint8_t block[64])
     ctx->state[5] += f;
     ctx->state[6] += g;
     ctx->state[7] += h;
+
+    if(no_of_blocks == 5)
+    	printf("%d", no_of_blocks);
+    else if(no_of_blocks == 6)
+        	printf("%d", no_of_blocks);
+    no_of_blocks++;
 }
 
 /**
