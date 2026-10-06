@@ -177,9 +177,13 @@ From the repository root, run:
 python Tools/prepare_slot_metadata.py \
     --slot A \
     --firmware "./Firmware_Slot_A/Debug/Firmware_Slot_A.bin" \
+    --elf "./Firmware_Slot_A/Debug/Firmware_Slot_A.elf" \
+    --objcopy "/cygdrive/c/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/arm-none-eabi-objcopy.exe" \
     --version 1 \
     --sequence 1 \
-    --state CONFIRMED
+    --state CONFIRMED \
+    --output "./Tools/Test_Data/Slot_A/Slot_A_Metadata.bin" \
+    --flash-image-output "./Tools/Test_Data/Slot_A/Firmware_Slot_A_FlashReference.bin"
 ```
 
 This generated:
@@ -191,16 +195,30 @@ Slot_A_Metadata.bin
 Observed result:
 
 ```text
-Firmware size        : 14824 bytes
+==============================================
+ STM32F407 Slot Metadata Generator
+==============================================
+Slot                 : A
+Firmware .bin        : Firmware_Slot_A/Debug/Firmware_Slot_A.bin
+Firmware ELF         : Firmware_Slot_A/Debug/Firmware_Slot_A.elf
+
+Raw .bin size        : 14824 bytes
+Flash image size     : 14824 bytes
 Version              : 1
 Sequence             : 1
 State                : CONFIRMED
 Metadata address     : 0x08008000
 Record size          : 60 bytes
-SHA-256              : f5697d71a4a3c7ff354c80b67d9e6f23e9807e9013c7db4581ea471b75734b04
-Metadata CRC         : 0xF2278F05
+
+Raw .bin SHA-256     : f5697d71a4a3c7ff354c80b67d9e6f23e9807e9013c7db4581ea471b75734b04
+Flash image SHA-256  : 96e1d04bc8efaaa976fd589d317eb9923e089728315c1c600e57dcbc77ac59ec
+
+Metadata CRC         : 0x45D978DF
 Commit marker        : 0xA5A55A5A
-Output size          : 16384 bytes
+Metadata output size : 16384 bytes
+Metadata output      : Tools/Test_Data/Slot_A/Slot_A_Metadata.bin
+Flash image output   : Tools/Test_Data/Slot_A/Firmware_Slot_A_FlashReference.bin
+==============================================
 ```
 
 ---
@@ -238,7 +256,9 @@ Symbol "FlashStorage_EraseSector" is a function at address 0x8022430.
 ## 9. Erase Slot A Metadata Sector
 
 Before writing the new metadata, Sector 2 must be erased because Flash cannot normally change a programmed `0` back to `1`.
-
+```gdb
+call FlashStorage_EraseSector(2, 2)
+```
 Using the bootloader flash erase functionality, Sector 2 was erased.
 
 Verify the sector using:
@@ -264,29 +284,63 @@ Observed:
 This confirmed that Sector 2 was erased.
 
 ---
+## 10. Write Metadata into Flash Sector 2
 
-## 10. First Attempt to Write Metadata Using `restore`
-
-The generated file was copied to:
-
-```text
-D:/Slot_A_Metadata.bin
+The generated file first save in RAM since directly saving in Flash is prohibited:
+```gdb
+restore ../Tools/Test_Data/Slot_A/Slot_A_Metadata.bin binary 0x20010000
 ```
-
-The following GDB command was attempted:
+Verify the RAM using:
 
 ```gdb
-restore D:/Slot_A_Metadata.bin binary 0x08008000
+x/16wx 0x20010000
 ```
 
-After using the shorter path, GDB accepted the file but reported:
+Expected:
 
 ```text
-Writing to flash memory forbidden in this context
+0x20010000: 0x00000001  0xdeadbeef  0x000039e8  0x00000001
+0x20010010: 0x4bd0e196  0xa9aaefc8  0x9d58fd76  0x92b97e31
+0x20010020: 0x2897083e  0x601c5c31  0xbcdc570e  0xec59ac77
+0x20010030: 0x45d978df  0xa5a55a5a  ....
 ```
 
-Therefore, raw `restore` was not used for flash programming.
+Observed:
 
+```text
+0x20010000:  0x00000001  0xDEADBEEF  0x000039E8  0x00000001
+0x20010010:  0x4BD0E196  0xA9AAEFC8  0x9D58FD76  0x92B97E31
+0x20010020:  0x2897083E  0x601C5C31  0xBCDC570E  0xEC59AC77
+0x20010030:  0x00000004  0x45D978DF  0xA5A55A5A  0xFFFFFFFF
+
+that is: 
+sequence       = 1
+magic          = DEADBEEF
+image_size     = 0x39E8 = 14824
+version        = 1
+SHA-256        = 96e1d04bc8efaaa976fd589d317eb9923e089728315c1c600e57dcbc77ac59ec
+update_state   = 4 (CONFIRMED)
+CRC            = 45D978DF
+commit_marker  = A5A55A5A
+```
+This confirmed that RAM has correct metadata.
+
+Program the 60-byte metadata record from the SRAM buffer:
+```gdb
+call FlashStorage_ProgramImage(0x08008000, 0x20010000, 60)
+```
+Verify the sector2 using:
+```gdb
+x/16wx 0x08008000
+```
+Observed:
+
+```text
+0x08008000:  0x00000001  0xdeadbeef  0x000039e8  0x00000001
+0x08008010:  0x4bd0e196  0xa9aaefc8  0x9d58fd76  0x92b97e31
+0x08008020:  0x2897083e  0x601c5c31  0xbcdc570e  0xec59ac77
+0x08008030:  0x00000004  0x45d978df  0xa5a55a5a  0xffffffff
+```
 ---
 
 ## 11. Find CubeIDE ARM Toolchain
