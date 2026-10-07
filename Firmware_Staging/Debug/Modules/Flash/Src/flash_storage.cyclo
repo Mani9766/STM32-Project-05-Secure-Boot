@@ -1,0 +1,4 @@
+../Modules/Flash/Src/flash_storage.c:11:19:FlashStorage_EraseSector	1
+../Modules/Flash/Src/flash_storage.c:33:19:FlashStorage_ProgramMetadata	4
+../Modules/Flash/Src/flash_storage.c:72:19:FlashStorage_ReadMetadata	2
+../Modules/Flash/Src/flash_storage.c:88:19:FlashStorage_ProgramImage	6

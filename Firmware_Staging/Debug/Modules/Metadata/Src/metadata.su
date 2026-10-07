@@ -1,0 +1,8 @@
+../Modules/Metadata/Src/metadata.c:16:6:Metadata_Validate	32	static
+../Modules/Metadata/Src/metadata.c:54:10:Metadata_CalculateRecordCRC	24	static
+../Modules/Metadata/Src/metadata.c:79:6:Metadata_ValidateRecord	24	static
+../Modules/Metadata/Src/metadata.c:108:6:Metadata_IsSequenceNewer	16	static
+../Modules/Metadata/Src/metadata.c:115:13:Metadata_IsRecordErased	24	static
+../Modules/Metadata/Src/metadata.c:141:13:Metadata_FindNextRecordAddress	96	static
+../Modules/Metadata/Src/metadata.c:173:6:Metadata_ReadLatestRecord	104	static
+../Modules/Metadata/Src/metadata.c:219:19:Metadata_WriteRecord	184	static
