@@ -236,7 +236,7 @@ Therefore, the existing STM32CubeIDE GDB/ST-LINK setup is used to program the me
 The bootloader already contains:
 
 ```c
-FlashStorage_EraseSector()
+FlashStorage_EraseSector(uint32_t sector, uint32_t voltage_range)
 ```
 
 Check that GDB can see the function:
