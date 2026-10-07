@@ -64,7 +64,7 @@ Firmware_Slot_B/Debug/Firmware_Slot_B.elf
 Initially, no `.bin` files were present.
 
 CubeIDE was configured to generate the firmware binary after build.
-In Post-build steps → Command, add:
+In Properties -> C/C++ Build -> Settings -> Post-build steps → Command, add:
 ```bash
 arm-none-eabi-objcopy -O binary "${BuildArtifactFileName}" "${BuildArtifactFileBaseName}.bin"
 ```
