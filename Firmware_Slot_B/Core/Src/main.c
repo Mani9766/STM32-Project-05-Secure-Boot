@@ -62,7 +62,11 @@ static HAL_StatusTypeDef Firmware_Confirm(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+int __io_putchar(int ch)
+{
+    ITM_SendChar((uint32_t)ch);
+    return ch;
+}
 /* USER CODE END 0 */
 
 /**
@@ -99,7 +103,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   if (Firmware_Confirm() != HAL_OK)
   {
-      printf("Slot B firmware confirmation failed\r\n");
+      printf("Slot B: firmware confirmation failed\r\n");
+      printf("Slot B: Resetting firmware\r\n");
 
       NVIC_SystemReset();
 
@@ -388,7 +393,7 @@ static HAL_StatusTypeDef Firmware_Confirm(void)
             SLOT_B_METADATA_REGION_END,
             &latest_record))
     {
-        printf("Slot B metadata read failed\r\n");
+        printf("Slot B: metadata read failed\r\n");
         return HAL_ERROR;
     }
 
@@ -399,7 +404,7 @@ static HAL_StatusTypeDef Firmware_Confirm(void)
     if (latest_record.metadata.update_state ==
         FIRMWARE_STATE_CONFIRMED)
     {
-        printf("Slot B firmware already CONFIRMED\r\n");
+        printf("Slot B: firmware already CONFIRMED\r\n");
         return HAL_OK;
     }
 
@@ -407,13 +412,13 @@ static HAL_StatusTypeDef Firmware_Confirm(void)
         FIRMWARE_STATE_BOOT_PENDING)
     {
         printf(
-            "Slot B firmware is not BOOT_PENDING, state: %lu\r\n",
+            "Slot B: firmware is not BOOT_PENDING, state: %lu\r\n",
             (unsigned long)latest_record.metadata.update_state);
 
         return HAL_ERROR;
     }
 
-    printf("Slot B trial firmware detected\r\n");
+    printf("Slot B: trial firmware detected\r\n");
 
     /* Copy existing metadata and change only the state */
     confirmed_metadata = latest_record.metadata;
@@ -432,7 +437,7 @@ static HAL_StatusTypeDef Firmware_Confirm(void)
 
     if (status != HAL_OK)
     {
-        printf("Slot B confirmation write failed\r\n");
+        printf("Slot B: confirmation write failed\r\n");
         return HAL_ERROR;
     }
 
@@ -442,18 +447,18 @@ static HAL_StatusTypeDef Firmware_Confirm(void)
             SLOT_B_METADATA_REGION_END,
             &latest_record))
     {
-        printf("Slot B confirmation verification failed\r\n");
+        printf("Slot B: confirmation verification failed\r\n");
         return HAL_ERROR;
     }
 
     if (latest_record.metadata.update_state !=
         FIRMWARE_STATE_CONFIRMED)
     {
-        printf("Slot B confirmation state mismatch\r\n");
+        printf("Slot B: confirmation state mismatch\r\n");
         return HAL_ERROR;
     }
 
-    printf("Slot B firmware CONFIRMED\r\n");
+    printf("Slot B: firmware CONFIRMED\r\n");
 
     return HAL_OK;
 }
