@@ -125,36 +125,7 @@ Create 16 KB metadata-sector binary
 
 The Python tool does not directly access STM32 Flash.
 
----
-
-## 5. Metadata Memory Map
-
-Slot metadata locations:
-
-```text
-Slot A metadata
-Sector 2
-0x08008000
-
-Slot B metadata
-Sector 3
-0x0800C000
-```
-
-Metadata sector size:
-
-```text
-0x4000 = 16384 bytes
-```
-
-Metadata record size:
-
-```text
-60 bytes
-```
-
-The metadata record layout is:
-
+Metadata Size
 ```text
 Offset  Size   Field
 0x00    4      sequence
@@ -169,7 +140,7 @@ Offset  Size   Field
 
 ---
 
-## 6. Generate Slot A Metadata
+### Generate Slot A Metadata
 
 From the repository root, run:
 
@@ -222,78 +193,100 @@ Flash image output   : Tools/Test_Data/Slot_A/Firmware_Slot_A_FlashReference.bin
 ```
 
 ---
+## 5. Python Staging Metadata Generator
 
-## 7. STM32CubeProgrammer Check
+The host-side staging metadata tool is:
 
-STM32CubeProgrammer was not available on the system.
+```text
+Tools/
+└── prepare_staging_metadata.py
+```
 
-Therefore, the existing STM32CubeIDE GDB/ST-LINK setup is used to program the metadata.
+The tool is used to create a complete metadata-sector binary for a firmware image stored in the FOTA download/staging area.
+
+Unlike `prepare_slot_metadata.py`, this tool calculates the SHA-256 directly from the raw firmware `.bin` that is written to the staging area.
+
+It performs the following steps:
+
+```text
+Firmware_Staging.bin
+      ↓
+Read firmware
+      ↓
+Calculate image size
+      ↓
+Calculate SHA-256
+      ↓
+Create firmware metadata
+      ↓
+Add sequence number
+      ↓
+Add update state
+      ↓
+Calculate metadata CRC
+      ↓
+Add commit marker
+      ↓
+Create 16 KB metadata-sector binary
+```
+
+The Python tool does not directly access STM32 Flash.
+
+### Metadata Size
+
+```text
+Offset  Size   Field
+0x00    4      sequence
+0x04    4      magic
+0x08    4      image_size
+0x0C    4      version
+0x10    32     SHA-256
+0x30    4      update_state
+0x34    4      metadata_crc
+0x38    4      commit_marker
+```
 
 ---
-## 8. Save Generated file in RAM
-The generated file first save in RAM since directly saving in Flash is prohibited:
-```gdb
-restore ../Tools/Test_Data/Slot_A/Slot_A_Metadata.bin binary 0x20010000
-```
-Verify the RAM using:
 
-```gdb
-x/16wx 0x20010000
+### Generate Staging Metadata
+
+From the repository root, run:
+
+```bash
+python Tools/prepare_staging_metadata.py \
+    --firmware "./Firmware_Staging/Debug/Firmware_Staging.bin" \
+    --version 3 \
+    --sequence 1 \
+    --state PENDING_VALIDATION \
+    --output "./Tools/Test_Data/Slot_A/Slot_A_Metadata.bin"
 ```
 
-Expected:
+This generated:
 
 ```text
-0x20010000: 0x00000001  0xdeadbeef  0x000039e8  0x00000001
-0x20010010: 0x4bd0e196  0xa9aaefc8  0x9d58fd76  0x92b97e31
-0x20010020: 0x2897083e  0x601c5c31  0xbcdc570e  0xec59ac77
-0x20010030: 0x45d978df  0xa5a55a5a  ....
+Slot_A_Metadata.bin
 ```
 
-Observed:
+Observed result:
 
 ```text
-0x20010000:  0x00000001  0xDEADBEEF  0x000039E8  0x00000001
-0x20010010:  0x4BD0E196  0xA9AAEFC8  0x9D58FD76  0x92B97E31
-0x20010020:  0x2897083E  0x601C5C31  0xBCDC570E  0xEC59AC77
-0x20010030:  0x00000004  0x45D978DF  0xA5A55A5A  0xFFFFFFFF
-
-that is: 
-sequence       = 1
-magic          = DEADBEEF
-image_size     = 0x39E8 = 14824
-version        = 1
-SHA-256        = 96e1d04bc8efaaa976fd589d317eb9923e089728315c1c600e57dcbc77ac59ec
-update_state   = 4 (CONFIRMED)
-CRC            = 45D978DF
-commit_marker  = A5A55A5A
+==============================================
+ STM32F407 Staging Metadata Generator
+==============================================
+Firmware .bin    : Firmware_Staging/Debug/Firmware_Staging.bin
+Firmware size    : 14956 bytes
+Version          : 3
+Sequence         : 1
+State            : PENDING_VALIDATION
+Raw .bin SHA-256 : fb2f3d71055a925e656692f3a6faf5355fbc940ee6a9ca88a89751cf63417486
+Metadata output  : Tools/Test_Data/Slot_A/Slot_A_Metadata.bin
+Metadata size    : 16384 bytes
+Commit marker    : 0xA5A55A5A
+==============================================
 ```
-This confirmed that RAM has correct metadata.
-
 ---
-
-## 9. Append/Write into Metadata Sector
-### Write into Metadata Sector 
-#### Erase Slot A Metadata Sector
-
-Check Bootloader Flash Erase Function
-The bootloader already contains:
-
-```c
-FlashStorage_EraseSector(uint32_t sector, uint32_t voltage_range)
-```
-
-Check that GDB can see the function:
-
-```gdb
-info address FlashStorage_EraseSector
-```
-
-Observed:
-
-```text
-Symbol "FlashStorage_EraseSector" is a function at address 0x8022430.
-```
+## 6. Save Metadata in respective sector
+### a. Erase sector
 Before writing the new metadata, Sector 2 must be erased because Flash cannot normally change a programmed `0` back to `1`.
 ```gdb
 call FlashStorage_EraseSector(2, 2)
@@ -319,10 +312,49 @@ Observed:
 0x8008010:  0xffffffff  0xffffffff  0xffffffff  0xffffffff
 0x8008020:  0xffffffff  0xffffffff  0xffffffff  0xffffffff
 ```
-
 This confirmed that Sector 2 was erased.
 
-##### Write Metadata into Flash Sector 2
+### b. Save Generated file in RAM
+The generated file first save in RAM since directly saving in Flash is prohibited:
+
+```gdb
+restore ../Tools/Test_Data/Slot_A/Slot_A_Metadata.bin binary 0x20010000
+```
+Verify the RAM using:
+
+```gdb
+x/16wx 0x20010000
+```
+
+Expected:
+
+```text
+0x20010000: 0x00000001  0xdeadbeef  0x000039e8  0x00000001
+0x20010010: 0x4bd0e196  0xa9aaefc8  0x9d58fd76  0x92b97e31
+0x20010020: 0x2897083e  0x601c5c31  0xbcdc570e  0xec59ac77
+0x20010030: 0x45d978df  0xa5a55a5a  ....
+Observed:
+
+```text
+0x20010000:  0x00000001  0xDEADBEEF  0x000039E8  0x00000001
+0x20010010:  0x4BD0E196  0xA9AAEFC8  0x9D58FD76  0x92B97E31
+0x20010020:  0x2897083E  0x601C5C31  0xBCDC570E  0xEC59AC77
+0x20010030:  0x00000004  0x45D978DF  0xA5A55A5A  0xFFFFFFFF
+
+that is: 
+sequence       = 1
+magic          = DEADBEEF
+image_size     = 0x39E8 = 14824
+version        = 1
+SHA-256        = 96e1d04bc8efaaa976fd589d317eb9923e089728315c1c600e57dcbc77ac59ec
+update_state   = 4 (CONFIRMED)
+CRC            = 45D978DF
+commit_marker  = A5A55A5A
+```
+This confirmed that RAM has correct metadata.
+
+```
+### c. Write Metadata into Flash Sector 2
 
 Program the 60-byte metadata record from the SRAM buffer:
 ```gdb
@@ -340,238 +372,39 @@ Observed:
 0x08008020:  0x2897083e  0x601c5c31  0xbcdc570e  0xec59ac77
 0x08008030:  0x00000004  0x45d978df  0xa5a55a5a  0xffffffff
 ```
+---
+## 6. Save Firmware_Staging image in sector 4
+### a. Erase sector
+Before writing the new metadata, Sector 2 must be erased because Flash cannot normally change a programmed `0` back to `1`.
+```gdb
+call FlashStorage_EraseSector(4, 2)
+```
 
-### Append into Metadata Sector 
+### b. Save Generated file in RAM
+The generated file first save in RAM since directly saving in Flash is prohibited:
+
+```gdb
+restore ../Firmware_Staging/Debug/Firmware_Staging.bin binary 0x20010000
+```
+
+### c. Write Metadata into Flash Sector 4
+
+Program the 60-byte metadata record from the SRAM buffer:
+```gdb
+call FlashStorage_ProgramImage(0x08010000, 0x20010000, 15068)
+```
+Verify the sector2 using:
+```gdb
+x/16wx 0x08010000
+```
+---
+
+## 7. Append into Metadata Sector 
 
 call:
 ```gdb
 call Metadata_WriteRecord(0x08008000, 0x0800C000, FLASH_SECTOR_2, FLASH_VOLTAGE_RANGE_2, (firmware_metadata_t *)0x20010000)
 ```
 However, GDB may not recognize FLASH_SECTOR_2 or FLASH_VOLTAGE_RANGE_2, because those are normally preprocessor macros. In that case use their numeric values or inspect the definitions in your code.
-## 10. Find CubeIDE ARM Toolchain
-
-The ARM toolchain bundled with STM32CubeIDE was located using Cygwin:
-
-```bash
-find /cygdrive/c -type f -name "arm-none-eabi-objcopy.exe" 2>/dev/null | head
-```
-
-Result:
-
-```text
-/cygdrive/c/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/arm-none-eabi-objcopy.exe
-```
-
-This existing CubeIDE toolchain was used instead of installing another ARM toolchain.
 
 ---
-
-## 11. Convert Metadata Binary to ELF
-
-Convert the generated binary into an ARM ELF object:
-
-```bash
-"/cygdrive/c/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/arm-none-eabi-objcopy.exe" \
-    -I binary \
-    -O elf32-littlearm \
-    -B arm \
-    "Slot_A_Metadata.bin" \
-    "Slot_A_Metadata.o"
-```
-
-Then assign the metadata section to the Slot A metadata address:
-
-```bash
-"/cygdrive/c/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/arm-none-eabi-objcopy.exe" \
-    --change-section-address .data=0x08008000 \
-    "Slot_A_Metadata.o" \
-    "Slot_A_Metadata.elf"
-```
-
-The generated file was placed in:
-
-```text
-Firmware_Slot_A/Debug/Slot_A_Metadata.elf
-```
-
----
-
-## 12. Check GDB Working Directory
-
-In STM32CubeIDE GDB:
-
-```gdb
-pwd
-```
-
-Observed working directory:
-
-```text
-D:/Path/STM32-Project-05-Secure-Boot/Firmware_Slot_A
-```
-
-Therefore the metadata ELF was loaded using:
-
-```gdb
-load Debug/Slot_A_Metadata.elf
-```
-
-GDB reported:
-
-```text
-Loading section .data, size 0x4000 lma 0x8008000
-
-Start address 0x00000000, load size 16384
-
-Transfer rate: 2 KB/sec, 8192 bytes/write.
-```
-
-Important information:
-
-```text
-size = 0x4000 = 16 KB
-LMA  = 0x08008000
-```
-
----
-
-## 13. Verify Slot A Metadata in Flash
-
-Read Sector 2:
-
-```gdb
-x/15wx 0x08008000
-```
-
-Observed:
-
-```text
-0x8008000:  0x00000001  0xdeadbeef  0x000039e8  0x00000001
-
-0x8008010:  0x717d69f5  0xffc7a3a4  0xb6804c35  0x236f9e7d
-
-0x8008020:  0x907e80e9  0x45dbc713  0x1b47ea81  0x044b7375
-
-0x8008030:  0x00000004  0xf2278f05  0xa5a55a5a
-```
-
-Decoded:
-
-```text
-sequence       = 1
-magic          = 0xDEADBEEF
-image_size     = 14824 bytes
-version        = 1
-update_state   = 4 (CONFIRMED)
-metadata_crc   = 0xF2278F05
-commit_marker  = 0xA5A55A5A
-```
-
-The SHA-256 stored in Flash matches the SHA-256 generated by Python.
-
----
-
-## 14. Slot A Boot Test
-
-After programming the new metadata, the MCU was reset.
-
-Slot A initially executed successfully.
-
-The intended boot sequence was:
-
-```text
-Bootloader
-    ↓
-Read Slot A metadata
-    ↓
-Slot A = CONFIRMED
-    ↓
-Validate metadata
-    ↓
-Calculate Slot A SHA-256
-    ↓
-Compare stored SHA-256
-    ↓
-Jump to Slot A
-```
-
-Slot A successfully executed during the first reset after the metadata update.
-
----
-
-## 15. Current Unexpected Behavior
-
-After the initial successful Slot A boot, the MCU was reset again.
-
-The bootloader then entered:
-
-```text
-Bootloader_FailSafe
-```
-
-A second reset produced the same fail-safe behavior.
-
-This issue is currently under investigation.
-
-Do not mark the repeated Slot A boot test as PASS until the cause is identified.
-
----
-
-## 16. Current State
-
-Completed:
-
-```text
-Python installation verified
-Slot A .bin generated
-Python metadata generated
-Metadata SHA-256 generated
-Metadata CRC generated
-Metadata ELF created
-Sector 2 erased
-Metadata programmed through GDB
-Metadata read back successfully
-Initial Slot A boot successful
-```
-
-Current issue:
-
-```text
-Repeated reset → Bootloader_FailSafe
-```
-
-Next action:
-
-```text
-Debug Slot A / Bootloader interaction
-        ↓
-Resolve repeated-reset fail-safe
-        ↓
-Repeat Slot A baseline test
-        ↓
-Prepare Slot B metadata
-        ↓
-Test Slot B baseline
-```
-
----
-
-## 17. Current Working Procedure Summary
-
-For future Slot A/B metadata preparation:
-
-```text
-1. Build firmware in STM32CubeIDE
-2. Generate `.bin`
-3. Open Cygwin Terminal
-4. Run prepare_slot_metadata.py
-5. Generate Slot_X_Metadata.bin
-6. Convert `.bin` to `.elf` using CubeIDE's arm-none-eabi-objcopy
-7. Assign `.data` to the Slot metadata address
-8. Open STM32CubeIDE debugger
-9. Erase the required metadata sector
-10. Use GDB `load` to program the metadata ELF
-11. Read back the sector using GDB
-12. Verify sequence, magic, size, version, SHA-256, state, CRC and commit marker
-13. Reset the MCU
-14. Observe the bootloader decision and application execution
