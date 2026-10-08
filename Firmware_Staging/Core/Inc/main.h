@@ -125,11 +125,31 @@ void Error_Handler(void);
 #define MEMS_INT2_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
-#define SLOT_B_METADATA_ADDRESS        0x0800C000U
-#define SLOT_B_METADATA_REGION_END     0x08010000U
+#define FIRMWARE_TARGET_SLOT_B
 
-#define SLOT_B_IMAGE_START             0x08040000U
-#define SLOT_B_IMAGE_REGION_END        0x08060000U
+#if defined(FIRMWARE_TARGET_SLOT_A)
+
+static const uintptr_t TARGET_METADATA_ADDRESS    = 0x08008000U;
+static const uintptr_t TARGET_METADATA_REGION_END = 0x0800C000U;
+static const uint32_t  TARGET_METADATA_SECTOR     = FLASH_SECTOR_2;
+static const uintptr_t TARGET_IMAGE_ADDRESS       = 0x08020000U;
+
+#elif defined(FIRMWARE_TARGET_SLOT_B)
+
+static const uintptr_t TARGET_METADATA_ADDRESS    = 0x0800C000U;
+static const uintptr_t TARGET_METADATA_REGION_END = 0x08010000U;
+static const uint32_t  TARGET_METADATA_SECTOR     = FLASH_SECTOR_3;
+static const uintptr_t TARGET_IMAGE_ADDRESS       = 0x08040000U;
+
+#else
+#error "Define FIRMWARE_TARGET_SLOT_A or FIRMWARE_TARGET_SLOT_B"
+#endif
+
+#define ORANGE_LED LD3_Pin
+#define GREEN_LED LD4_Pin
+#define RED_LED LD5_Pin
+#define BLUE_LED LD6_Pin
+#define USER_BUTTON B1_Pin
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
