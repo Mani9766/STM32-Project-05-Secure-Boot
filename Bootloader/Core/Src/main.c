@@ -178,19 +178,139 @@ int main(void)
   }
 
   /*
-   * Determine the currently confirmed firmware slot.
+   * Detect an unfinished trial boot.
+   *
+   * If a slot is BOOT_PENDING after reset, the previous
+   * trial did not confirm, so boot the ROLLBACK slot.
    */
-  status = FindConfirmedSlot(
-      &slot_a_record,
-      &slot_b_record,
-      slot_a_record_valid,
-      slot_b_record_valid,
-      &active_slot);
+  slot_a_pending =
+      slot_a_record_valid &&
+      (slot_a_record.metadata.update_state ==
+       FIRMWARE_STATE_BOOT_PENDING);
 
-  if (status != HAL_OK)
+  slot_b_pending =
+      slot_b_record_valid &&
+      (slot_b_record.metadata.update_state ==
+       FIRMWARE_STATE_BOOT_PENDING);
+
+  if (slot_a_pending && slot_b_pending)
   {
-      printf("No valid confirmed firmware slot\r\n");
+      printf("Invalid state: both slots are BOOT_PENDING\r\n");
       Bootloader_FailSafe();
+  }
+
+  if (slot_a_pending || slot_b_pending)
+  {
+      firmware_slot_t pending_slot;
+      firmware_slot_t rollback_slot;
+
+      firmware_metadata_record_t *pending_record;
+      firmware_metadata_record_t *rollback_record;
+
+      /*
+       * Identify the failed trial slot and the rollback slot.
+       */
+      if (slot_a_pending)
+      {
+          pending_slot = FIRMWARE_SLOT_A;
+          pending_record = &slot_a_record;
+
+          if (slot_b_record_valid &&
+              (slot_b_record.metadata.update_state ==
+               FIRMWARE_STATE_ROLLBACK))
+          {
+              rollback_slot = FIRMWARE_SLOT_B;
+              rollback_record = &slot_b_record;
+          }
+          else
+          {
+              printf("No valid Slot B ROLLBACK image\r\n");
+              Bootloader_FailSafe();
+          }
+      }
+      else
+      {
+          pending_slot = FIRMWARE_SLOT_B;
+          pending_record = &slot_b_record;
+
+          if (slot_a_record_valid &&
+              (slot_a_record.metadata.update_state ==
+               FIRMWARE_STATE_ROLLBACK))
+          {
+              rollback_slot = FIRMWARE_SLOT_A;
+              rollback_record = &slot_a_record;
+          }
+          else
+          {
+              printf("No valid Slot A ROLLBACK image\r\n");
+              Bootloader_FailSafe();
+          }
+      }
+
+      printf(
+          "BOOT_PENDING detected in Slot %s\r\n",
+          (pending_slot == FIRMWARE_SLOT_A) ? "A" : "B");
+
+      printf(
+          "Rolling back to Slot %s\r\n",
+          (rollback_slot == FIRMWARE_SLOT_A) ? "A" : "B");
+
+      /*
+       * The trial firmware did not confirm successfully.
+       * Mark it INVALID so it is not retried.
+       */
+      status = UpdateSlotState(
+          pending_slot,
+          pending_record,
+          FIRMWARE_STATE_INVALID);
+
+      if (status != HAL_OK)
+      {
+          printf("Failed to mark trial slot as INVALID\r\n");
+          Bootloader_FailSafe();
+      }
+
+      /*
+       * Restore the rollback image as the confirmed firmware.
+       */
+      status = UpdateSlotState(
+          rollback_slot,
+          rollback_record,
+          FIRMWARE_STATE_CONFIRMED);
+
+      if (status != HAL_OK)
+      {
+          printf("Failed to restore ROLLBACK slot as CONFIRMED\r\n");
+          Bootloader_FailSafe();
+      }
+
+      /*
+       * The rollback slot is now the firmware to boot.
+       */
+      active_slot = rollback_slot;
+
+      printf(
+          "Rollback complete: Slot %s is now CONFIRMED\r\n",
+          (active_slot == FIRMWARE_SLOT_A) ? "A" : "B");
+  }
+  else
+  {
+      /*
+       * No unfinished trial boot.
+       * Determine the currently confirmed firmware slot.
+       */
+      status = FindConfirmedSlot(
+          &slot_a_record,
+          &slot_b_record,
+          slot_a_record_valid,
+          slot_b_record_valid,
+          &active_slot);
+
+      if (status != HAL_OK)
+      {
+          printf("No valid confirmed firmware slot\r\n");
+          Bootloader_FailSafe();
+      }
   }
 
   /*
@@ -320,6 +440,19 @@ int main(void)
 
       if (status == HAL_OK)
       {
+    	  status = UpdateSlotState(
+    	      active_slot,
+    	      (active_slot == FIRMWARE_SLOT_A) ?
+    	          &slot_a_record :
+    	          &slot_b_record,
+    	      FIRMWARE_STATE_ROLLBACK);
+
+    	  if (status != HAL_OK)
+    	  {
+    	      printf("Failed to set rollback state\r\n");
+    	      Bootloader_FailSafe();
+    	  }
+
           uint32_t trial_image_start;
           uint32_t trial_image_end;
 
