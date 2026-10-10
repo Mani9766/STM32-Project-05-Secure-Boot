@@ -105,8 +105,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   if (Firmware_Confirm() != HAL_OK)
   {
-      printf("Firmware confirmation failed\r\n");
-      printf("Resetting firmware\r\n");
+      printf("\r\n[%s] Firmware confirmation failed", CURRENT_SLOT_NAME);
+      printf("\r\n[%s] Resetting firmware", CURRENT_SLOT_NAME);
 
       NVIC_SystemReset();
 
@@ -134,7 +134,7 @@ int main(void)
 	    {
 	        New_Update_Available = true;
 
-	        printf("New Update Available\r\n");
+	        printf("\r\n[%s] New Update Available", CURRENT_SLOT_NAME);
 
 	        while (HAL_GPIO_ReadPin(B1_GPIO_Port, USER_BUTTON) == GPIO_PIN_SET)
 	        {
@@ -144,7 +144,7 @@ int main(void)
     }
 
 	if(New_Update_Available){
-		printf("New Update Available\r\n");
+		printf("\r\n[%s] New Update Available\r\n", CURRENT_SLOT_NAME);
 		New_Update_Available = false;
 
 		NVIC_SystemReset();
@@ -155,9 +155,8 @@ int main(void)
 		HAL_IWDG_Refresh(&hiwdg);
 	}
 
-	HAL_GPIO_TogglePin(GPIOD, BLUE_LED);
-    HAL_Delay(500);
-    HAL_GPIO_TogglePin(GPIOD, ORANGE_LED);
+	HAL_GPIO_TogglePin(GPIOD, ORANGE_LED);
+    HAL_Delay(250);
   }
   /* USER CODE END 3 */
 }
@@ -419,14 +418,14 @@ static HAL_StatusTypeDef Firmware_Confirm(void)
             TARGET_METADATA_REGION_END,
             &latest_record))
     {
-        printf("Metadata read failed\r\n");
+        printf("\r\n[%s] Metadata read failed\r\n", CURRENT_SLOT_NAME);
         return HAL_ERROR;
     }
 
     if (latest_record.metadata.update_state ==
         FIRMWARE_STATE_CONFIRMED)
     {
-        printf("Firmware already CONFIRMED\r\n");
+        printf("\r\n[%s] Firmware already CONFIRMED\r\n", CURRENT_SLOT_NAME);
         return HAL_OK;
     }
 
@@ -434,12 +433,12 @@ static HAL_StatusTypeDef Firmware_Confirm(void)
         FIRMWARE_STATE_BOOT_PENDING)
     {
         printf(
-            "Firmware is not BOOT_PENDING, state: %lu\r\n",
+            "\r\n[%s] Firmware is not BOOT_PENDING, state: %lu\r\n", CURRENT_SLOT_NAME,
             (unsigned long)latest_record.metadata.update_state);
         return HAL_ERROR;
     }
 
-    printf("Trial firmware detected\r\n");
+    printf("\r\n[%s] Trial firmware detected\r\n", CURRENT_SLOT_NAME);
 
     confirmed_metadata = latest_record.metadata;
     confirmed_metadata.update_state = FIRMWARE_STATE_CONFIRMED;
@@ -453,7 +452,7 @@ static HAL_StatusTypeDef Firmware_Confirm(void)
 
     if (status != HAL_OK)
     {
-        printf("Confirmation write failed\r\n");
+        printf("\r\n[%s] Confirmation write failed\r\n", CURRENT_SLOT_NAME);
         return HAL_ERROR;
     }
 
@@ -462,18 +461,18 @@ static HAL_StatusTypeDef Firmware_Confirm(void)
             TARGET_METADATA_REGION_END,
             &latest_record))
     {
-        printf("Confirmation verification failed\r\n");
+        printf("\r\n[%s] Confirmation verification failed\r\n", CURRENT_SLOT_NAME);
         return HAL_ERROR;
     }
 
     if (latest_record.metadata.update_state !=
         FIRMWARE_STATE_CONFIRMED)
     {
-        printf("Confirmation state mismatch\r\n");
+        printf("\r\n[%s] Confirmation state mismatch\r\n", CURRENT_SLOT_NAME);
         return HAL_ERROR;
     }
 
-    printf("Firmware CONFIRMED\r\n");
+    printf("\r\n[%s] Firmware CONFIRMED\r\n", CURRENT_SLOT_NAME);
 
     return HAL_OK;
 }

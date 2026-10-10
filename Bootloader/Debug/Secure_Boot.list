@@ -7,19 +7,19 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
   1 .text         000048a8  08000190  08000190  00001190  2**4
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .rodata       00000878  08004a38  08004a38  00005a38  2**2
+  2 .rodata       000009dc  08004a38  08004a38  00005a38  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  3 .ARM.extab    00000000  080052b0  080052b0  00007088  2**0
+  3 .ARM.extab    00000000  08005414  08005414  00007088  2**0
                   CONTENTS, READONLY
-  4 .ARM          00000008  080052b0  080052b0  000062b0  2**2
+  4 .ARM          00000008  08005414  08005414  00006414  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  5 .preinit_array 00000000  080052b8  080052b8  00007088  2**0
+  5 .preinit_array 00000000  0800541c  0800541c  00007088  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  6 .init_array   00000004  080052b8  080052b8  000062b8  2**2
+  6 .init_array   00000004  0800541c  0800541c  0000641c  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  7 .fini_array   00000004  080052bc  080052bc  000062bc  2**2
+  7 .fini_array   00000004  08005420  08005420  00006420  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  8 .data         00000088  20000000  080052c0  00007000  2**2
+  8 .data         00000088  20000000  08005424  00007000  2**2
                   CONTENTS, ALLOC, LOAD, DATA
   9 .metadata     00000000  08008000  08008000  00007088  2**0
                   CONTENTS
@@ -588,7 +588,7 @@ int main(void)
  800065c:	2b00      	cmp	r3, #0
  800065e:	d002      	beq.n	8000666 <main+0x62>
   {
-      printf("No valid Slot A metadata record\r\n");
+      printf("[BOOT] No valid Slot A metadata record\r\n");
  8000660:	48b5      	ldr	r0, [pc, #724]	@ (8000938 <main+0x334>)
  8000662:	f003 fb5d 	bl	8003d20 <puts>
   }
@@ -614,7 +614,7 @@ int main(void)
  8000684:	2b00      	cmp	r3, #0
  8000686:	d002      	beq.n	800068e <main+0x8a>
   {
-      printf("No valid Slot B metadata record\r\n");
+      printf("[BOOT] No valid Slot B metadata record\r\n");
  8000688:	48ad      	ldr	r0, [pc, #692]	@ (8000940 <main+0x33c>)
  800068a:	f003 fb49 	bl	8003d20 <puts>
    *
@@ -669,7 +669,7 @@ int main(void)
  80006e4:	2b00      	cmp	r3, #0
  80006e6:	d004      	beq.n	80006f2 <main+0xee>
   {
-      printf("Invalid state: both slots are BOOT_PENDING\r\n");
+      printf("[BOOT] Invalid state: both slots are BOOT_PENDING\r\n");
  80006e8:	4896      	ldr	r0, [pc, #600]	@ (8000944 <main+0x340>)
  80006ea:	f003 fb19 	bl	8003d20 <puts>
       Bootloader_FailSafe();
@@ -721,7 +721,7 @@ int main(void)
           }
           else
           {
-              printf("No valid Slot B ROLLBACK image\r\n");
+              printf("[BOOT] No valid Slot B ROLLBACK image\r\n");
  8000738:	4883      	ldr	r0, [pc, #524]	@ (8000948 <main+0x344>)
  800073a:	f003 faf1 	bl	8003d20 <puts>
               Bootloader_FailSafe();
@@ -759,7 +759,7 @@ int main(void)
           }
           else
           {
-              printf("No valid Slot A ROLLBACK image\r\n");
+              printf("[BOOT] No valid Slot A ROLLBACK image\r\n");
  8000772:	4876      	ldr	r0, [pc, #472]	@ (800094c <main+0x348>)
  8000774:	f003 fad4 	bl	8003d20 <puts>
               Bootloader_FailSafe();
@@ -777,7 +777,7 @@ int main(void)
  800078a:	4619      	mov	r1, r3
  800078c:	4872      	ldr	r0, [pc, #456]	@ (8000958 <main+0x354>)
  800078e:	f003 fa5f 	bl	8003c50 <iprintf>
-          "BOOT_PENDING detected in Slot %s\r\n",
+          "[BOOT] BOOT_PENDING detected in Slot %s\r\n",
           (pending_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
       printf(
@@ -812,7 +812,7 @@ int main(void)
  80007c2:	2b00      	cmp	r3, #0
  80007c4:	d004      	beq.n	80007d0 <main+0x1cc>
       {
-          printf("Failed to mark trial slot as INVALID\r\n");
+          printf("[BOOT] Failed to mark trial slot as INVALID\r\n");
  80007c6:	4866      	ldr	r0, [pc, #408]	@ (8000960 <main+0x35c>)
  80007c8:	f003 faaa 	bl	8003d20 <puts>
           Bootloader_FailSafe();
@@ -839,7 +839,7 @@ int main(void)
  80007ea:	2b00      	cmp	r3, #0
  80007ec:	d004      	beq.n	80007f8 <main+0x1f4>
       {
-          printf("Failed to restore ROLLBACK slot as CONFIRMED\r\n");
+          printf("[BOOT] Failed to restore ROLLBACK slot as CONFIRMED\r\n");
  80007ee:	485d      	ldr	r0, [pc, #372]	@ (8000964 <main+0x360>)
  80007f0:	f003 fa96 	bl	8003d20 <puts>
           Bootloader_FailSafe();
@@ -854,7 +854,7 @@ int main(void)
  80007fc:	f887 3023 	strb.w	r3, [r7, #35]	@ 0x23
 
       printf(
-          "Rollback complete: Slot %s is now CONFIRMED\r\n",
+          "[BOOT] Rollback complete: Slot %s is now CONFIRMED\r\n",
           (active_slot == FIRMWARE_SLOT_A) ? "A" : "B");
  8000800:	f897 3023 	ldrb.w	r3, [r7, #35]	@ 0x23
       printf(
@@ -894,7 +894,7 @@ int main(void)
  800083e:	2b00      	cmp	r3, #0
  8000840:	d004      	beq.n	800084c <main+0x248>
       {
-          printf("No valid confirmed firmware slot\r\n");
+          printf("[BOOT] No valid confirmed firmware slot\r\n");
  8000842:	484a      	ldr	r0, [pc, #296]	@ (800096c <main+0x368>)
  8000844:	f003 fa6c 	bl	8003d20 <puts>
           Bootloader_FailSafe();
@@ -912,7 +912,7 @@ int main(void)
  8000858:	f887 30b4 	strb.w	r3, [r7, #180]	@ 0xb4
 
   printf(
-      "Active Slot: %s\r\n",
+      "\r\n[BOOT] Active Slot: %s\r\n",
       (active_slot == FIRMWARE_SLOT_A) ? "A" : "B");
  800085c:	f897 3023 	ldrb.w	r3, [r7, #35]	@ 0x23
   printf(
@@ -987,7 +987,7 @@ int main(void)
  80008de:	2b00      	cmp	r3, #0
  80008e0:	d004      	beq.n	80008ec <main+0x2e8>
   {
-      printf("Invalid state: both slots are pending validation\r\n");
+      printf("[BOOT] Invalid state: both slots are pending validation\r\n");
  80008e2:	4825      	ldr	r0, [pc, #148]	@ (8000978 <main+0x374>)
  80008e4:	f003 fa1c 	bl	8003d20 <puts>
       Bootloader_FailSafe();
@@ -1041,21 +1041,21 @@ int main(void)
  8000934:	08008000 	.word	0x08008000
  8000938:	08004a38 	.word	0x08004a38
  800093c:	08010000 	.word	0x08010000
- 8000940:	08004a5c 	.word	0x08004a5c
- 8000944:	08004a80 	.word	0x08004a80
- 8000948:	08004aac 	.word	0x08004aac
- 800094c:	08004acc 	.word	0x08004acc
- 8000950:	08004aec 	.word	0x08004aec
- 8000954:	08004af0 	.word	0x08004af0
- 8000958:	08004af4 	.word	0x08004af4
- 800095c:	08004b18 	.word	0x08004b18
- 8000960:	08004b34 	.word	0x08004b34
- 8000964:	08004b5c 	.word	0x08004b5c
- 8000968:	08004b8c 	.word	0x08004b8c
- 800096c:	08004bbc 	.word	0x08004bbc
- 8000970:	08004be0 	.word	0x08004be0
- 8000974:	08004bf4 	.word	0x08004bf4
- 8000978:	08004c08 	.word	0x08004c08
+ 8000940:	08004a60 	.word	0x08004a60
+ 8000944:	08004a88 	.word	0x08004a88
+ 8000948:	08004abc 	.word	0x08004abc
+ 800094c:	08004ae4 	.word	0x08004ae4
+ 8000950:	08004b0c 	.word	0x08004b0c
+ 8000954:	08004b10 	.word	0x08004b10
+ 8000958:	08004b14 	.word	0x08004b14
+ 800095c:	08004b40 	.word	0x08004b40
+ 8000960:	08004b64 	.word	0x08004b64
+ 8000964:	08004b94 	.word	0x08004b94
+ 8000968:	08004bcc 	.word	0x08004bcc
+ 800096c:	08004c04 	.word	0x08004c04
+ 8000970:	08004c30 	.word	0x08004c30
+ 8000974:	08004c4c 	.word	0x08004c4c
+ 8000978:	08004c68 	.word	0x08004c68
  800097c:	f107 0324 	add.w	r3, r7, #36	@ 0x24
  8000980:	f8c7 30b0 	str.w	r3, [r7, #176]	@ 0xb0
           &slot_a_record :
@@ -1078,7 +1078,7 @@ int main(void)
  80009a0:	2b00      	cmp	r3, #0
  80009a2:	d004      	beq.n	80009ae <main+0x3aa>
       {
-          printf("Pending firmware validation processing failed\r\n");
+          printf("[BOOT] Pending firmware validation processing failed\r\n");
  80009a4:	4894      	ldr	r0, [pc, #592]	@ (8000bf8 <main+0x5f4>)
  80009a6:	f003 f9bb 	bl	8003d20 <puts>
           Bootloader_FailSafe();
@@ -1135,7 +1135,7 @@ int main(void)
  8000a04:	2b00      	cmp	r3, #0
  8000a06:	d004      	beq.n	8000a12 <main+0x40e>
   {
-      printf("Invalid state: both slots are VALIDATED\r\n");
+      printf("[BOOT] Invalid state: both slots are VALIDATED\r\n");
  8000a08:	487c      	ldr	r0, [pc, #496]	@ (8000bfc <main+0x5f8>)
  8000a0a:	f003 f989 	bl	8003d20 <puts>
       Bootloader_FailSafe();
@@ -1185,7 +1185,7 @@ int main(void)
  8000a50:	429a      	cmp	r2, r3
  8000a52:	d104      	bne.n	8000a5e <main+0x45a>
       {
-          printf("Invalid state: active slot is VALIDATED\r\n");
+          printf("[BOOT] Invalid state: active slot is VALIDATED\r\n");
  8000a54:	486a      	ldr	r0, [pc, #424]	@ (8000c00 <main+0x5fc>)
  8000a56:	f003 f963 	bl	8003d20 <puts>
           Bootloader_FailSafe();
@@ -1202,7 +1202,7 @@ int main(void)
  8000a6c:	4619      	mov	r1, r3
  8000a6e:	4867      	ldr	r0, [pc, #412]	@ (8000c0c <main+0x608>)
  8000a70:	f003 f8ee 	bl	8003c50 <iprintf>
-          "Validated firmware found in Slot %s\r\n",
+          "[BOOT] Validated firmware found in Slot %s\r\n",
           (validated_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
       status = PromoteValidatedFirmware(
@@ -1245,7 +1245,7 @@ int main(void)
  8000ab8:	2b00      	cmp	r3, #0
  8000aba:	d004      	beq.n	8000ac6 <main+0x4c2>
     	  {
-    	      printf("Failed to set rollback state\r\n");
+    	      printf("[BOOT] Failed to set rollback state\r\n");
  8000abc:	4854      	ldr	r0, [pc, #336]	@ (8000c10 <main+0x60c>)
  8000abe:	f003 f92f 	bl	8003d20 <puts>
     	      Bootloader_FailSafe();
@@ -1281,7 +1281,7 @@ int main(void)
  8000af2:	4619      	mov	r1, r3
  8000af4:	4847      	ldr	r0, [pc, #284]	@ (8000c14 <main+0x610>)
  8000af6:	f003 f8ab 	bl	8003c50 <iprintf>
-              "Starting trial boot from Slot %s\r\n",
+              "[BOOT] Starting trial boot from Slot %s\r\n",
               (validated_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
           JumpToApplication(
@@ -1292,7 +1292,7 @@ int main(void)
               trial_image_end);
       }
 
-      printf("Firmware promotion failed\r\n");
+      printf("[BOOT] Firmware promotion failed\r\n");
  8000b06:	4844      	ldr	r0, [pc, #272]	@ (8000c18 <main+0x614>)
  8000b08:	f003 f90a 	bl	8003d20 <puts>
    * Normal boot of confirmed firmware
@@ -1340,7 +1340,7 @@ int main(void)
  8000b52:	2b00      	cmp	r3, #0
  8000b54:	d004      	beq.n	8000b60 <main+0x55c>
   {
-      printf("Invalid confirmed slot metadata\r\n");
+      printf("[BOOT] Invalid confirmed slot metadata\r\n");
  8000b56:	4831      	ldr	r0, [pc, #196]	@ (8000c1c <main+0x618>)
  8000b58:	f003 f8e2 	bl	8003d20 <puts>
       Bootloader_FailSafe();
@@ -1370,11 +1370,11 @@ int main(void)
  8000b7e:	f8d7 10a0 	ldr.w	r1, [r7, #160]	@ 0xa0
  8000b82:	4827      	ldr	r0, [pc, #156]	@ (8000c20 <main+0x61c>)
  8000b84:	f003 f864 	bl	8003c50 <iprintf>
-      "Active image start: 0x%08lX\r\n",
+      "[BOOT] Active image start: 0x%08lX\r\n",
       (unsigned long)active_image_start);
 
   printf(
-      "Active image size: 0x%08lX\r\n",
+      "[BOOT] Active image size: 0x%08lX\r\n",
       (unsigned long)active_metadata->image_size);
  8000b88:	f8d7 30a4 	ldr.w	r3, [r7, #164]	@ 0xa4
  8000b8c:	685b      	ldr	r3, [r3, #4]
@@ -1386,7 +1386,7 @@ int main(void)
    * Independently verify the confirmed firmware image.
    */
   printf(
-      "Calculating SHA-256 of active Slot %s\r\n",
+      "[BOOT] Calculating SHA-256 of active Slot %s\r\n",
       (active_slot == FIRMWARE_SLOT_A) ? "A" : "B");
  8000b96:	f897 3023 	ldrb.w	r3, [r7, #35]	@ 0x23
   printf(
@@ -1425,7 +1425,7 @@ int main(void)
  8000bd2:	2b00      	cmp	r3, #0
  8000bd4:	d008      	beq.n	8000be8 <main+0x5e4>
   {
-      printf("Active firmware SHA-256 matched\r\n");
+      printf("\r\n[BOOT] Active firmware SHA-256 matched\r\n");
  8000bd6:	4815      	ldr	r0, [pc, #84]	@ (8000c2c <main+0x628>)
  8000bd8:	f003 f8a2 	bl	8003d20 <puts>
 
@@ -1437,7 +1437,7 @@ int main(void)
           active_image_end);
   }
 
-  printf("Active firmware SHA-256 mismatch\r\n");
+  printf("[BOOT] Active firmware SHA-256 mismatch\r\n");
  8000be8:	4811      	ldr	r0, [pc, #68]	@ (8000c30 <main+0x62c>)
  8000bea:	f003 f899 	bl	8003d20 <puts>
 
@@ -1451,21 +1451,21 @@ int main(void)
  8000bf2:	bf00      	nop
  8000bf4:	e7fd      	b.n	8000bf2 <main+0x5ee>
  8000bf6:	bf00      	nop
- 8000bf8:	08004c3c 	.word	0x08004c3c
- 8000bfc:	08004c6c 	.word	0x08004c6c
- 8000c00:	08004c98 	.word	0x08004c98
- 8000c04:	08004aec 	.word	0x08004aec
- 8000c08:	08004af0 	.word	0x08004af0
- 8000c0c:	08004cc4 	.word	0x08004cc4
- 8000c10:	08004cec 	.word	0x08004cec
- 8000c14:	08004d0c 	.word	0x08004d0c
- 8000c18:	08004d30 	.word	0x08004d30
- 8000c1c:	08004d4c 	.word	0x08004d4c
- 8000c20:	08004d70 	.word	0x08004d70
- 8000c24:	08004d90 	.word	0x08004d90
- 8000c28:	08004db0 	.word	0x08004db0
- 8000c2c:	08004dd8 	.word	0x08004dd8
- 8000c30:	08004dfc 	.word	0x08004dfc
+ 8000bf8:	08004ca4 	.word	0x08004ca4
+ 8000bfc:	08004cdc 	.word	0x08004cdc
+ 8000c00:	08004d0c 	.word	0x08004d0c
+ 8000c04:	08004b0c 	.word	0x08004b0c
+ 8000c08:	08004b10 	.word	0x08004b10
+ 8000c0c:	08004d3c 	.word	0x08004d3c
+ 8000c10:	08004d6c 	.word	0x08004d6c
+ 8000c14:	08004d94 	.word	0x08004d94
+ 8000c18:	08004dc0 	.word	0x08004dc0
+ 8000c1c:	08004de4 	.word	0x08004de4
+ 8000c20:	08004e0c 	.word	0x08004e0c
+ 8000c24:	08004e34 	.word	0x08004e34
+ 8000c28:	08004e58 	.word	0x08004e58
+ 8000c2c:	08004e88 	.word	0x08004e88
+ 8000c30:	08004eb4 	.word	0x08004eb4
 
 08000c34 <SystemClock_Config>:
 /**
@@ -2117,7 +2117,7 @@ static void JumpToApplication(uint32_t image_start,
  8001016:	d903      	bls.n	8001020 <JumpToApplication+0x34>
         (app_sp > SRAM_END_ADDRESS))
     {
-        printf("Invalid Application Stack Pointer\r\n");
+        printf("[BOOT] Invalid Application Stack Pointer\r\n");
  8001018:	4815      	ldr	r0, [pc, #84]	@ (8001070 <JumpToApplication+0x84>)
  800101a:	f002 fe81 	bl	8003d20 <puts>
         return;
@@ -2136,7 +2136,7 @@ static void JumpToApplication(uint32_t image_start,
  800102e:	d303      	bcc.n	8001038 <JumpToApplication+0x4c>
         (app_reset_handler >= image_end))
     {
-        printf("Invalid Application Reset Handler\r\n");
+        printf("[BOOT] Invalid Application Reset Handler\r\n");
  8001030:	4810      	ldr	r0, [pc, #64]	@ (8001074 <JumpToApplication+0x88>)
  8001032:	f002 fe75 	bl	8003d20 <puts>
         return;
@@ -2150,7 +2150,7 @@ static void JumpToApplication(uint32_t image_start,
  800103e:	2b00      	cmp	r3, #0
  8001040:	d103      	bne.n	800104a <JumpToApplication+0x5e>
     {
-        printf("Invalid Reset Handler: Thumb bit not set\r\n");
+        printf("[BOOT] Invalid Reset Handler: Thumb bit not set\r\n");
  8001042:	480d      	ldr	r0, [pc, #52]	@ (8001078 <JumpToApplication+0x8c>)
  8001044:	f002 fe6c 	bl	8003d20 <puts>
         return;
@@ -2193,9 +2193,9 @@ __STATIC_FORCEINLINE void __set_MSP(uint32_t topOfMainStack)
  8001068:	bd80      	pop	{r7, pc}
  800106a:	bf00      	nop
  800106c:	20020000 	.word	0x20020000
- 8001070:	08004e20 	.word	0x08004e20
- 8001074:	08004e44 	.word	0x08004e44
- 8001078:	08004e68 	.word	0x08004e68
+ 8001070:	08004ee0 	.word	0x08004ee0
+ 8001074:	08004f0c 	.word	0x08004f0c
+ 8001078:	08004f38 	.word	0x08004f38
  800107c:	e000ed00 	.word	0xe000ed00
 
 08001080 <GetOtherSlot>:
@@ -2615,7 +2615,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
             DOWNLOAD_START_ADDRESS,
             DOWNLOAD_REGION_END))
     {
-        printf("Invalid staged firmware metadata\r\n");
+        printf("[BOOT] Invalid staged firmware metadata\r\n");
  80012a0:	482f      	ldr	r0, [pc, #188]	@ (8001360 <ProcessPendingValidation+0x10c>)
  80012a2:	f002 fd3d 	bl	8003d20 <puts>
 
@@ -2642,7 +2642,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
  80012be:	429a      	cmp	r2, r3
  80012c0:	d80a      	bhi.n	80012d8 <ProcessPendingValidation+0x84>
     {
-        printf("Staged firmware is not newer\r\n");
+        printf("[BOOT] Staged firmware is not newer\r\n");
  80012c2:	4828      	ldr	r0, [pc, #160]	@ (8001364 <ProcessPendingValidation+0x110>)
  80012c4:	f002 fd2c 	bl	8003d20 <puts>
 
@@ -2658,7 +2658,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
     }
 
     printf(
-        "Staged firmware version: %lu\r\n",
+        "[BOOT] Staged firmware version: %lu\r\n",
         (unsigned long)pending_record->metadata.version);
  80012d8:	68bb      	ldr	r3, [r7, #8]
  80012da:	68db      	ldr	r3, [r3, #12]
@@ -2667,7 +2667,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
  80012de:	4822      	ldr	r0, [pc, #136]	@ (8001368 <ProcessPendingValidation+0x114>)
  80012e0:	f002 fcb6 	bl	8003c50 <iprintf>
 
-    printf("Calculating staged firmware SHA-256\r\n");
+    printf("[BOOT] Calculating staged firmware SHA-256\r\n");
  80012e4:	4821      	ldr	r0, [pc, #132]	@ (800136c <ProcessPendingValidation+0x118>)
  80012e6:	f002 fd1b 	bl	8003d20 <puts>
 
@@ -2697,7 +2697,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
  8001314:	2b00      	cmp	r3, #0
  8001316:	d00a      	beq.n	800132e <ProcessPendingValidation+0xda>
     {
-        printf("Staged firmware SHA-256 mismatch\r\n");
+        printf("[BOOT] Staged firmware SHA-256 mismatch\r\n");
  8001318:	4815      	ldr	r0, [pc, #84]	@ (8001370 <ProcessPendingValidation+0x11c>)
  800131a:	f002 fd01 	bl	8003d20 <puts>
 
@@ -2714,7 +2714,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
             FIRMWARE_STATE_INVALID);
     }
 
-    printf("Staged firmware SHA-256 matched\r\n");
+    printf("[BOOT] Staged firmware SHA-256 matched\r\n");
  800132e:	4811      	ldr	r0, [pc, #68]	@ (8001374 <ProcessPendingValidation+0x120>)
  8001330:	f002 fcf6 	bl	8003d20 <puts>
      * The firmware is valid and can now be promoted
@@ -2738,17 +2738,17 @@ static HAL_StatusTypeDef ProcessPendingValidation(
  8001346:	46bd      	mov	sp, r7
  8001348:	bd80      	pop	{r7, pc}
  800134a:	bf00      	nop
- 800134c:	08004aec 	.word	0x08004aec
- 8001350:	08004af0 	.word	0x08004af0
- 8001354:	08004e94 	.word	0x08004e94
+ 800134c:	08004b0c 	.word	0x08004b0c
+ 8001350:	08004b10 	.word	0x08004b10
+ 8001354:	08004f6c 	.word	0x08004f6c
  8001358:	08020000 	.word	0x08020000
  800135c:	08010000 	.word	0x08010000
- 8001360:	08004ec0 	.word	0x08004ec0
- 8001364:	08004ee4 	.word	0x08004ee4
- 8001368:	08004f04 	.word	0x08004f04
- 800136c:	08004f24 	.word	0x08004f24
- 8001370:	08004f4c 	.word	0x08004f4c
- 8001374:	08004f70 	.word	0x08004f70
+ 8001360:	08004f9c 	.word	0x08004f9c
+ 8001364:	08004fc8 	.word	0x08004fc8
+ 8001368:	08004ff0 	.word	0x08004ff0
+ 800136c:	08005018 	.word	0x08005018
+ 8001370:	08005044 	.word	0x08005044
+ 8001374:	08005070 	.word	0x08005070
 
 08001378 <PromoteValidatedFirmware>:
 
@@ -2808,7 +2808,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
             DOWNLOAD_START_ADDRESS,
             DOWNLOAD_REGION_END))
     {
-        printf("Invalid staged firmware metadata\r\n");
+        printf("[BOOT] Invalid staged firmware metadata\r\n");
  80013b4:	4852      	ldr	r0, [pc, #328]	@ (8001500 <PromoteValidatedFirmware+0x188>)
  80013b6:	f002 fcb3 	bl	8003d20 <puts>
         return HAL_ERROR;
@@ -2850,7 +2850,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
             destination_start,
             destination_region_end))
     {
-        printf("Firmware does not fit destination slot\r\n");
+        printf("[BOOT] Firmware does not fit destination slot\r\n");
  80013ec:	4845      	ldr	r0, [pc, #276]	@ (8001504 <PromoteValidatedFirmware+0x18c>)
  80013ee:	f002 fc97 	bl	8003d20 <puts>
         return HAL_ERROR;
@@ -2886,7 +2886,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
     /*
      * Erase the inactive firmware slot.
      */
-    printf("Erasing destination slot\r\n");
+    printf("[BOOT] Erasing destination slot\r\n");
  8001418:	483e      	ldr	r0, [pc, #248]	@ (8001514 <PromoteValidatedFirmware+0x19c>)
  800141a:	f002 fc81 	bl	8003d20 <puts>
 
@@ -2904,7 +2904,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
  8001430:	2b00      	cmp	r3, #0
  8001432:	d005      	beq.n	8001440 <PromoteValidatedFirmware+0xc8>
     {
-        printf("Failed to erase destination slot\r\n");
+        printf("[BOOT] Failed to erase destination slot\r\n");
  8001434:	4838      	ldr	r0, [pc, #224]	@ (8001518 <PromoteValidatedFirmware+0x1a0>)
  8001436:	f002 fc73 	bl	8003d20 <puts>
         return status;
@@ -2915,7 +2915,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
      * Copy firmware from staging area into the
      * selected inactive slot.
      */
-    printf("Programming destination slot\r\n");
+    printf("[BOOT] Programming destination slot\r\n");
  8001440:	4836      	ldr	r0, [pc, #216]	@ (800151c <PromoteValidatedFirmware+0x1a4>)
  8001442:	f002 fc6d 	bl	8003d20 <puts>
 
@@ -2937,7 +2937,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
  800145e:	2b00      	cmp	r3, #0
  8001460:	d005      	beq.n	800146e <PromoteValidatedFirmware+0xf6>
     {
-        printf("Failed to program destination slot\r\n");
+        printf("[BOOT] Failed to program destination slot\r\n");
  8001462:	482f      	ldr	r0, [pc, #188]	@ (8001520 <PromoteValidatedFirmware+0x1a8>)
  8001464:	f002 fc5c 	bl	8003d20 <puts>
         /*
@@ -2953,7 +2953,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
      * Independently calculate SHA-256 of the image
      * after programming.
      */
-    printf("Verifying programmed destination SHA-256\r\n");
+    printf("[BOOT] Verifying programmed destination SHA-256\r\n");
  800146e:	482d      	ldr	r0, [pc, #180]	@ (8001524 <PromoteValidatedFirmware+0x1ac>)
  8001470:	f002 fc56 	bl	8003d20 <puts>
 
@@ -2983,7 +2983,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
  800149e:	2b00      	cmp	r3, #0
  80014a0:	d004      	beq.n	80014ac <PromoteValidatedFirmware+0x134>
     {
-        printf("Destination SHA-256 mismatch\r\n");
+        printf("[BOOT] Destination SHA-256 mismatch\r\n");
  80014a2:	4821      	ldr	r0, [pc, #132]	@ (8001528 <PromoteValidatedFirmware+0x1b0>)
  80014a4:	f002 fc3c 	bl	8003d20 <puts>
         /*
@@ -2996,7 +2996,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
  80014aa:	e020      	b.n	80014ee <PromoteValidatedFirmware+0x176>
     }
 
-    printf("Destination SHA-256 matched\r\n");
+    printf("[BOOT] Destination SHA-256 matched\r\n");
  80014ac:	481f      	ldr	r0, [pc, #124]	@ (800152c <PromoteValidatedFirmware+0x1b4>)
  80014ae:	f002 fc37 	bl	8003d20 <puts>
 
@@ -3021,7 +3021,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
  80014c8:	2b00      	cmp	r3, #0
  80014ca:	d005      	beq.n	80014d8 <PromoteValidatedFirmware+0x160>
     {
-        printf("Failed to set BOOT_PENDING state\r\n");
+        printf("[BOOT] Failed to set BOOT_PENDING state\r\n");
  80014cc:	4818      	ldr	r0, [pc, #96]	@ (8001530 <PromoteValidatedFirmware+0x1b8>)
  80014ce:	f002 fc27 	bl	8003d20 <puts>
         return status;
@@ -3029,7 +3029,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
  80014d6:	e00a      	b.n	80014ee <PromoteValidatedFirmware+0x176>
     }
 
-    printf("Slot %s is now BOOT_PENDING\r\n",
+    printf("[BOOT] Slot %s is now BOOT_PENDING\r\n",
  80014d8:	79fb      	ldrb	r3, [r7, #7]
  80014da:	2b00      	cmp	r3, #0
  80014dc:	d101      	bne.n	80014e2 <PromoteValidatedFirmware+0x16a>
@@ -3051,20 +3051,20 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
  80014f6:	bf00      	nop
  80014f8:	08020000 	.word	0x08020000
  80014fc:	08010000 	.word	0x08010000
- 8001500:	08004ec0 	.word	0x08004ec0
- 8001504:	08004f94 	.word	0x08004f94
- 8001508:	08004aec 	.word	0x08004aec
- 800150c:	08004af0 	.word	0x08004af0
- 8001510:	08004fbc 	.word	0x08004fbc
- 8001514:	08004fe4 	.word	0x08004fe4
- 8001518:	08005000 	.word	0x08005000
- 800151c:	08005024 	.word	0x08005024
- 8001520:	08005044 	.word	0x08005044
- 8001524:	08005068 	.word	0x08005068
- 8001528:	08005094 	.word	0x08005094
- 800152c:	080050b4 	.word	0x080050b4
- 8001530:	080050d4 	.word	0x080050d4
- 8001534:	080050f8 	.word	0x080050f8
+ 8001500:	08004f9c 	.word	0x08004f9c
+ 8001504:	08005098 	.word	0x08005098
+ 8001508:	08004b0c 	.word	0x08004b0c
+ 800150c:	08004b10 	.word	0x08004b10
+ 8001510:	080050c8 	.word	0x080050c8
+ 8001514:	080050f8 	.word	0x080050f8
+ 8001518:	0800511c 	.word	0x0800511c
+ 800151c:	08005148 	.word	0x08005148
+ 8001520:	08005170 	.word	0x08005170
+ 8001524:	0800519c 	.word	0x0800519c
+ 8001528:	080051d0 	.word	0x080051d0
+ 800152c:	080051f8 	.word	0x080051f8
+ 8001530:	0800521c 	.word	0x0800521c
+ 8001534:	08005248 	.word	0x08005248
 
 08001538 <Bootloader_FailSafe>:
  * @brief  Keep the bootloader in a safe state when no valid
@@ -3075,10 +3075,10 @@ static void Bootloader_FailSafe(void)
 {
  8001538:	b580      	push	{r7, lr}
  800153a:	af00      	add	r7, sp, #0
-    printf("Bootloader: no valid firmware image\r\n");
+    printf("[BOOT] Bootloader: no valid firmware image\r\n");
  800153c:	4808      	ldr	r0, [pc, #32]	@ (8001560 <Bootloader_FailSafe+0x28>)
  800153e:	f002 fbef 	bl	8003d20 <puts>
-    printf("Bootloader Fail Safe code is running\r\n");
+    printf("[BOOT] Bootloader Fail Safe code is running\r\n");
  8001542:	4808      	ldr	r0, [pc, #32]	@ (8001564 <Bootloader_FailSafe+0x2c>)
  8001544:	f002 fbec 	bl	8003d20 <puts>
 
@@ -3095,8 +3095,8 @@ static void Bootloader_FailSafe(void)
  800155a:	bf00      	nop
  800155c:	e7f4      	b.n	8001548 <Bootloader_FailSafe+0x10>
  800155e:	bf00      	nop
- 8001560:	08005118 	.word	0x08005118
- 8001564:	08005140 	.word	0x08005140
+ 8001560:	08005270 	.word	0x08005270
+ 8001564:	0800529c 	.word	0x0800529c
  8001568:	40020c00 	.word	0x40020c00
 
 0800156c <Error_Handler>:
@@ -3756,7 +3756,7 @@ LoopFillZerobss:
   ldr r1, =_edata
  8001814:	20000088 	.word	0x20000088
   ldr r2, =_sidata
- 8001818:	080052c0 	.word	0x080052c0
+ 8001818:	08005424 	.word	0x08005424
   ldr r2, =_sbss
  800181c:	20000088 	.word	0x20000088
   ldr r4, =_ebss
@@ -7284,7 +7284,7 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(const RCC_ClkInitTypeDef  *RCC_ClkInitStru
  8002baa:	bf00      	nop
  8002bac:	40023c00 	.word	0x40023c00
  8002bb0:	40023800 	.word	0x40023800
- 8002bb4:	0800516c 	.word	0x0800516c
+ 8002bb4:	080052d0 	.word	0x080052d0
  8002bb8:	20000000 	.word	0x20000000
  8002bbc:	20000004 	.word	0x20000004
 
@@ -7992,9 +7992,9 @@ static void SHA256_Transform(SHA256_Context *ctx, const uint8_t block[64])
  8003206:	46bd      	mov	sp, r7
  8003208:	bd80      	pop	{r7, pc}
  800320a:	bf00      	nop
- 800320c:	0800517c 	.word	0x0800517c
+ 800320c:	080052e0 	.word	0x080052e0
  8003210:	200000b4 	.word	0x200000b4
- 8003214:	08005168 	.word	0x08005168
+ 8003214:	080052cc 	.word	0x080052cc
 
 08003218 <SHA256_Init>:
  * @param   ctx     Pointer to the SHA-256 context.
@@ -10174,10 +10174,10 @@ bool ImageValidation_VerifySHA256(
  8003fda:	4798      	blx	r3
  8003fdc:	3601      	adds	r6, #1
  8003fde:	e7f2      	b.n	8003fc6 <__libc_init_array+0x1e>
- 8003fe0:	080052b8 	.word	0x080052b8
- 8003fe4:	080052b8 	.word	0x080052b8
- 8003fe8:	080052b8 	.word	0x080052b8
- 8003fec:	080052bc 	.word	0x080052bc
+ 8003fe0:	0800541c 	.word	0x0800541c
+ 8003fe4:	0800541c 	.word	0x0800541c
+ 8003fe8:	0800541c 	.word	0x0800541c
+ 8003fec:	08005420 	.word	0x08005420
 
 08003ff0 <__retarget_lock_init_recursive>:
  8003ff0:	4770      	bx	lr
@@ -10689,11 +10689,11 @@ bool ImageValidation_VerifySHA256(
  800446c:	4630      	mov	r0, r6
  800446e:	f000 f879 	bl	8004564 <_printf_i>
  8004472:	e7e4      	b.n	800443e <_vfiprintf_r+0x1e6>
- 8004474:	0800527c 	.word	0x0800527c
- 8004478:	08005286 	.word	0x08005286
+ 8004474:	080053e0 	.word	0x080053e0
+ 8004478:	080053ea 	.word	0x080053ea
  800447c:	00000000 	.word	0x00000000
  8004480:	08004233 	.word	0x08004233
- 8004484:	08005282 	.word	0x08005282
+ 8004484:	080053e6 	.word	0x080053e6
 
 08004488 <_printf_common>:
  8004488:	e92d 47f0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, lr}
@@ -11022,8 +11022,8 @@ bool ImageValidation_VerifySHA256(
  8004790:	2500      	movs	r5, #0
  8004792:	f104 0619 	add.w	r6, r4, #25
  8004796:	e7f5      	b.n	8004784 <_printf_i+0x220>
- 8004798:	0800528d 	.word	0x0800528d
- 800479c:	0800529e 	.word	0x0800529e
+ 8004798:	080053f1 	.word	0x080053f1
+ 800479c:	08005402 	.word	0x08005402
 
 080047a0 <__sflush_r>:
  80047a0:	f9b1 200c 	ldrsh.w	r2, [r1, #12]

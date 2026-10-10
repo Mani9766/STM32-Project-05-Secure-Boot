@@ -162,7 +162,7 @@ int main(void)
 
   if (!slot_a_record_valid)
   {
-      printf("No valid Slot A metadata record\r\n");
+      printf("[BOOT] No valid Slot A metadata record\r\n");
   }
 
   /* Read latest committed Slot B metadata record */
@@ -174,7 +174,7 @@ int main(void)
 
   if (!slot_b_record_valid)
   {
-      printf("No valid Slot B metadata record\r\n");
+      printf("[BOOT] No valid Slot B metadata record\r\n");
   }
 
   /*
@@ -195,7 +195,7 @@ int main(void)
 
   if (slot_a_pending && slot_b_pending)
   {
-      printf("Invalid state: both slots are BOOT_PENDING\r\n");
+      printf("[BOOT] Invalid state: both slots are BOOT_PENDING\r\n");
       Bootloader_FailSafe();
   }
 
@@ -224,7 +224,7 @@ int main(void)
           }
           else
           {
-              printf("No valid Slot B ROLLBACK image\r\n");
+              printf("[BOOT] No valid Slot B ROLLBACK image\r\n");
               Bootloader_FailSafe();
           }
       }
@@ -242,17 +242,17 @@ int main(void)
           }
           else
           {
-              printf("No valid Slot A ROLLBACK image\r\n");
+              printf("[BOOT] No valid Slot A ROLLBACK image\r\n");
               Bootloader_FailSafe();
           }
       }
 
       printf(
-          "BOOT_PENDING detected in Slot %s\r\n",
+          "[BOOT] BOOT_PENDING detected in Slot %s\r\n",
           (pending_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
       printf(
-          "Rolling back to Slot %s\r\n",
+          "[BOOT] Rolling back to Slot %s\r\n",
           (rollback_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
       /*
@@ -266,7 +266,7 @@ int main(void)
 
       if (status != HAL_OK)
       {
-          printf("Failed to mark trial slot as INVALID\r\n");
+          printf("[BOOT] Failed to mark trial slot as INVALID\r\n");
           Bootloader_FailSafe();
       }
 
@@ -280,7 +280,7 @@ int main(void)
 
       if (status != HAL_OK)
       {
-          printf("Failed to restore ROLLBACK slot as CONFIRMED\r\n");
+          printf("[BOOT] Failed to restore ROLLBACK slot as CONFIRMED\r\n");
           Bootloader_FailSafe();
       }
 
@@ -290,7 +290,7 @@ int main(void)
       active_slot = rollback_slot;
 
       printf(
-          "Rollback complete: Slot %s is now CONFIRMED\r\n",
+          "[BOOT] Rollback complete: Slot %s is now CONFIRMED\r\n",
           (active_slot == FIRMWARE_SLOT_A) ? "A" : "B");
   }
   else
@@ -308,7 +308,7 @@ int main(void)
 
       if (status != HAL_OK)
       {
-          printf("No valid confirmed firmware slot\r\n");
+          printf("[BOOT] No valid confirmed firmware slot\r\n");
           Bootloader_FailSafe();
       }
   }
@@ -319,11 +319,11 @@ int main(void)
   inactive_slot = GetOtherSlot(active_slot);
 
   printf(
-      "Active Slot: %s\r\n",
+      "\r\n[BOOT] Active Slot: %s\r\n",
       (active_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
   printf(
-      "Inactive Slot: %s\r\n",
+      "[BOOT] Inactive Slot: %s\r\n",
       (inactive_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
   /*
@@ -343,7 +343,7 @@ int main(void)
 
   if (slot_a_pending && slot_b_pending)
   {
-      printf("Invalid state: both slots are pending validation\r\n");
+      printf("[BOOT] Invalid state: both slots are pending validation\r\n");
       Bootloader_FailSafe();
   }
 
@@ -378,7 +378,7 @@ int main(void)
 
       if (status != HAL_OK)
       {
-          printf("Pending firmware validation processing failed\r\n");
+          printf("[BOOT] Pending firmware validation processing failed\r\n");
           Bootloader_FailSafe();
       }
   }
@@ -401,7 +401,7 @@ int main(void)
 
   if (slot_a_validated && slot_b_validated)
   {
-      printf("Invalid state: both slots are VALIDATED\r\n");
+      printf("[BOOT] Invalid state: both slots are VALIDATED\r\n");
       Bootloader_FailSafe();
   }
 
@@ -426,12 +426,12 @@ int main(void)
        */
       if (validated_slot == active_slot)
       {
-          printf("Invalid state: active slot is VALIDATED\r\n");
+          printf("[BOOT] Invalid state: active slot is VALIDATED\r\n");
           Bootloader_FailSafe();
       }
 
       printf(
-          "Validated firmware found in Slot %s\r\n",
+          "[BOOT] Validated firmware found in Slot %s\r\n",
           (validated_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
       status = PromoteValidatedFirmware(
@@ -449,7 +449,7 @@ int main(void)
 
     	  if (status != HAL_OK)
     	  {
-    	      printf("Failed to set rollback state\r\n");
+    	      printf("[BOOT] Failed to set rollback state\r\n");
     	      Bootloader_FailSafe();
     	  }
 
@@ -464,7 +464,7 @@ int main(void)
               validated_record->metadata.image_size;
 
           printf(
-              "Starting trial boot from Slot %s\r\n",
+              "[BOOT] Starting trial boot from Slot %s\r\n",
               (validated_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
           JumpToApplication(
@@ -472,7 +472,7 @@ int main(void)
               trial_image_end);
       }
 
-      printf("Firmware promotion failed\r\n");
+      printf("[BOOT] Firmware promotion failed\r\n");
   }
 
   /*
@@ -495,7 +495,7 @@ int main(void)
           GetSlotImageStart(active_slot),
           GetSlotImageRegionEnd(active_slot)))
   {
-      printf("Invalid confirmed slot metadata\r\n");
+      printf("[BOOT] Invalid confirmed slot metadata\r\n");
       Bootloader_FailSafe();
   }
 
@@ -510,18 +510,18 @@ int main(void)
       active_metadata->image_size;
 
   printf(
-      "Active image start: 0x%08lX\r\n",
+      "[BOOT] Active image start: 0x%08lX\r\n",
       (unsigned long)active_image_start);
 
   printf(
-      "Active image size: 0x%08lX\r\n",
+      "[BOOT] Active image size: 0x%08lX\r\n",
       (unsigned long)active_metadata->image_size);
 
   /*
    * Independently verify the confirmed firmware image.
    */
   printf(
-      "Calculating SHA-256 of active Slot %s\r\n",
+      "[BOOT] Calculating SHA-256 of active Slot %s\r\n",
       (active_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
   ImageValidation_CalculateSHA256(
@@ -533,14 +533,14 @@ int main(void)
           active_digest,
           active_metadata->sha256))
   {
-      printf("Active firmware SHA-256 matched\r\n");
+      printf("\r\n[BOOT] Active firmware SHA-256 matched\r\n");
 
       JumpToApplication(
           active_image_start,
           active_image_end);
   }
 
-  printf("Active firmware SHA-256 mismatch\r\n");
+  printf("[BOOT] Active firmware SHA-256 mismatch\r\n");
 
   Bootloader_FailSafe();
   /* USER CODE END 2 */
@@ -790,7 +790,7 @@ static void JumpToApplication(uint32_t image_start,
     if ((app_sp < SRAM_START_ADDRESS) ||
         (app_sp > SRAM_END_ADDRESS))
     {
-        printf("Invalid Application Stack Pointer\r\n");
+        printf("[BOOT] Invalid Application Stack Pointer\r\n");
         return;
     }
 
@@ -798,14 +798,14 @@ static void JumpToApplication(uint32_t image_start,
     if ((app_reset_handler < image_start) ||
         (app_reset_handler >= image_end))
     {
-        printf("Invalid Application Reset Handler\r\n");
+        printf("[BOOT] Invalid Application Reset Handler\r\n");
         return;
     }
 
     /* Reset_Handler must be Thumb code */
     if ((app_reset_handler & 1U) == 0U)
     {
-        printf("Invalid Reset Handler: Thumb bit not set\r\n");
+        printf("[BOOT] Invalid Reset Handler: Thumb bit not set\r\n");
         return;
     }
 
@@ -980,7 +980,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
     }
 
     printf(
-        "Processing pending firmware in Slot %s\r\n",
+        "[BOOT] Processing pending firmware in Slot %s\r\n",
         (pending_slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
     /*
@@ -991,7 +991,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
             DOWNLOAD_START_ADDRESS,
             DOWNLOAD_REGION_END))
     {
-        printf("Invalid staged firmware metadata\r\n");
+        printf("[BOOT] Invalid staged firmware metadata\r\n");
 
         return UpdateSlotState(
             pending_slot,
@@ -1006,7 +1006,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
     if (pending_record->metadata.version <=
         confirmed_record->metadata.version)
     {
-        printf("Staged firmware is not newer\r\n");
+        printf("[BOOT] Staged firmware is not newer\r\n");
 
         return UpdateSlotState(
             pending_slot,
@@ -1015,10 +1015,10 @@ static HAL_StatusTypeDef ProcessPendingValidation(
     }
 
     printf(
-        "Staged firmware version: %lu\r\n",
+        "[BOOT] Staged firmware version: %lu\r\n",
         (unsigned long)pending_record->metadata.version);
 
-    printf("Calculating staged firmware SHA-256\r\n");
+    printf("[BOOT] Calculating staged firmware SHA-256\r\n");
 
     ImageValidation_CalculateSHA256(
         DOWNLOAD_START_ADDRESS,
@@ -1029,7 +1029,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
             staged_digest,
             pending_record->metadata.sha256))
     {
-        printf("Staged firmware SHA-256 mismatch\r\n");
+        printf("[BOOT] Staged firmware SHA-256 mismatch\r\n");
 
         return UpdateSlotState(
             pending_slot,
@@ -1037,7 +1037,7 @@ static HAL_StatusTypeDef ProcessPendingValidation(
             FIRMWARE_STATE_INVALID);
     }
 
-    printf("Staged firmware SHA-256 matched\r\n");
+    printf("[BOOT] Staged firmware SHA-256 matched\r\n");
 
     /*
      * The firmware is valid and can now be promoted
@@ -1084,7 +1084,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
             DOWNLOAD_START_ADDRESS,
             DOWNLOAD_REGION_END))
     {
-        printf("Invalid staged firmware metadata\r\n");
+        printf("[BOOT] Invalid staged firmware metadata\r\n");
         return HAL_ERROR;
     }
 
@@ -1102,7 +1102,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
             destination_start,
             destination_region_end))
     {
-        printf("Firmware does not fit destination slot\r\n");
+        printf("[BOOT] Firmware does not fit destination slot\r\n");
         return HAL_ERROR;
     }
 
@@ -1112,13 +1112,13 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
         FLASH_SECTOR_6;
 
     printf(
-        "Promoting staged firmware to Slot %s\r\n",
+        "[BOOT] Promoting staged firmware to Slot %s\r\n",
         (slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
     /*
      * Erase the inactive firmware slot.
      */
-    printf("Erasing destination slot\r\n");
+    printf("[BOOT] Erasing destination slot\r\n");
 
     status = FlashStorage_EraseSector(
         flash_sector,
@@ -1126,7 +1126,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
 
     if (status != HAL_OK)
     {
-        printf("Failed to erase destination slot\r\n");
+        printf("[BOOT] Failed to erase destination slot\r\n");
         return status;
     }
 
@@ -1134,7 +1134,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
      * Copy firmware from staging area into the
      * selected inactive slot.
      */
-    printf("Programming destination slot\r\n");
+    printf("[BOOT] Programming destination slot\r\n");
 
     status = FlashStorage_ProgramImage(
         destination_start,
@@ -1143,7 +1143,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
 
     if (status != HAL_OK)
     {
-        printf("Failed to program destination slot\r\n");
+        printf("[BOOT] Failed to program destination slot\r\n");
 
         /*
          * Keep VALIDATED state.
@@ -1157,7 +1157,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
      * Independently calculate SHA-256 of the image
      * after programming.
      */
-    printf("Verifying programmed destination SHA-256\r\n");
+    printf("[BOOT] Verifying programmed destination SHA-256\r\n");
 
     ImageValidation_CalculateSHA256(
         destination_start,
@@ -1168,7 +1168,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
             destination_digest,
             record->metadata.sha256))
     {
-        printf("Destination SHA-256 mismatch\r\n");
+        printf("[BOOT] Destination SHA-256 mismatch\r\n");
 
         /*
          * Keep VALIDATED state.
@@ -1178,7 +1178,7 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
         return HAL_ERROR;
     }
 
-    printf("Destination SHA-256 matched\r\n");
+    printf("[BOOT] Destination SHA-256 matched\r\n");
 
     /*
      * Destination image is now programmed and verified.
@@ -1191,11 +1191,11 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
 
     if (status != HAL_OK)
     {
-        printf("Failed to set BOOT_PENDING state\r\n");
+        printf("[BOOT] Failed to set BOOT_PENDING state\r\n");
         return status;
     }
 
-    printf("Slot %s is now BOOT_PENDING\r\n",
+    printf("[BOOT] Slot %s is now BOOT_PENDING\r\n",
            (slot == FIRMWARE_SLOT_A) ? "A" : "B");
 
     return HAL_OK;
@@ -1208,8 +1208,8 @@ static HAL_StatusTypeDef PromoteValidatedFirmware(
  */
 static void Bootloader_FailSafe(void)
 {
-    printf("Bootloader: no valid firmware image\r\n");
-    printf("Bootloader Fail Safe code is running\r\n");
+    printf("[BOOT] Bootloader: no valid firmware image\r\n");
+    printf("[BOOT] Bootloader Fail Safe code is running\r\n");
 
     while (1)
     {

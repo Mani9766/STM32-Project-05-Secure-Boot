@@ -128,14 +128,14 @@ void Error_Handler(void);
 #define FIRMWARE_TARGET_SLOT_B
 
 #if defined(FIRMWARE_TARGET_SLOT_A)
-
+#define CURRENT_SLOT_NAME "SLOT A"
 static const uintptr_t TARGET_METADATA_ADDRESS    = 0x08008000U;
 static const uintptr_t TARGET_METADATA_REGION_END = 0x0800C000U;
 static const uint32_t  TARGET_METADATA_SECTOR     = FLASH_SECTOR_2;
 static const uintptr_t TARGET_IMAGE_ADDRESS       = 0x08020000U;
 
 #elif defined(FIRMWARE_TARGET_SLOT_B)
-
+#define CURRENT_SLOT_NAME "SLOT B"
 static const uintptr_t TARGET_METADATA_ADDRESS    = 0x0800C000U;
 static const uintptr_t TARGET_METADATA_REGION_END = 0x08010000U;
 static const uint32_t  TARGET_METADATA_SECTOR     = FLASH_SECTOR_3;
