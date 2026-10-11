@@ -78,7 +78,7 @@ SHA-256 comparison verifies that the calculated digest matches the expected dige
 - Asset protection effectiveness will be evaluated through threat scenarios,
   source-code review, security hardening, and relevant test evidence.
 
-  ## 3. Attack Surface Identification
+## 3. Attack Surface Identification
 
 ### Attack Surface Inventory
 
@@ -107,3 +107,36 @@ SHA-256 comparison verifies that the calculated digest matches the expected dige
 - **Debug access:** Security restrictions on SWD/ST-LINK access depend on the device configuration and deployment assumptions; they are not presumed to be enabled.
 
 The attack surfaces listed above are potential points of influence, not confirmed vulnerabilities. Their actual exploitability and the effectiveness of existing controls will be evaluated through threat scenario analysis, source-code review, and testing.
+
+## 4. Threat Scenario Identification
+
+### Threat Scenarios
+
+| Threat ID&nbsp;&nbsp; | Threat Scenario | Potential Impact | Related Attack Surfaces |
+|---|---|---|---|
+| TH-01 | **Firmware image tampering:** Firmware bytes are modified after the expected SHA-256 digest is generated. | Corrupted firmware may be executed if verification is bypassed, incorrect, or performed over the wrong image region. | AS-01, AS-04 |
+| TH-02 | **Metadata corruption:** Metadata fields such as magic value, digest, image size, version, or state become corrupted or invalid. | Incorrect validation results, rejection of valid firmware, or an unsafe boot decision. | AS-02, AS-07 |
+| TH-03 | **Invalid image size or address:** Metadata provides an image size or address outside the permitted firmware region. | Out-of-bounds memory access, verification of unintended data, or unsafe application execution. | AS-03 |
+| TH-04 | **SHA-256 verification failure mishandled:** A digest mismatch or verification error is not handled as a validation failure. | Corrupted firmware may be accepted despite the integrity check. | AS-04 |
+| TH-05 | **Staging-to-slot image mismatch:** The staged image is validated, but the destination image differs after copying or programming. | An invalid destination image may be selected if its integrity is not adequately verified. | AS-01, AS-04, AS-05, AS-08 |
+| TH-06 | **Interrupted firmware download:** Power loss, communication failure, or incomplete input leaves a partially written staging image. | An incomplete image may be accepted if update completion and image validity are not established before promotion. | AS-01, AS-05, AS-10 |
+| TH-07 | **Interrupted flash programming or erase:** Power loss or a flash-operation failure interrupts an update or metadata write. | Firmware or metadata may become inconsistent, potentially affecting candidate selection or recovery. | AS-05, AS-06, AS-07 |
+| TH-08 | **Invalid application handover:** The selected image has an invalid initial stack pointer, reset-handler address, or vector-table configuration. | The processor may jump to an invalid address, enter a fault, or fail to start the application correctly. | AS-08 |
+| TH-09 | **Incorrect boot-state transition:** Metadata states or boot-selection logic become inconsistent during candidate validation, trial boot, confirmation, or rollback. | The bootloader may select the wrong image or fail to follow the intended recovery behavior. | AS-02, AS-07 |
+| TH-10 | **Unexpected firmware downgrade:** An older firmware version is selected or accepted contrary to the intended version policy. | The device may run an older image containing known defects or previously corrected integrity-handling problems. | AS-02, AS-07 |
+| TH-11 | **Host/device image representation mismatch:** The host-side tool and bootloader use different image sizes, byte ranges, or padding assumptions when generating and checking the digest. | Valid firmware may fail verification, or the intended image contents may not be fully covered by the verification process. | AS-04, AS-09 |
+| TH-12 | **Incorrect flash-region modification:** An erase or programming operation targets the wrong sector or exceeds its intended boundary. | Firmware, metadata, or other protected flash contents may be corrupted. | AS-03, AS-06 |
+| TH-13 | **Malformed update-protocol input:** Update data contains invalid lengths, unexpected fields, or incomplete payloads. | Invalid data may reach flash programming or influence update state without appropriate validation. | AS-10 |
+| TH-14 | **Firmware modification through programming access:** Firmware or metadata is modified through an available debug or programming interface. | Changes to firmware should be detected when they cause a mismatch with the expected digest; protection depends on the implemented verification and access configuration. | AS-01, AS-02, AS-11 |
+
+### Threat Assessment Notes
+
+- These scenarios describe potential threats; they are not confirmed vulnerabilities.
+- Firmware integrity depends on correct SHA-256 calculation, digest comparison, metadata validation, and image-boundary checks.
+- The firmware image must be validated at the address and over the byte range relevant to the image that will actually execute.
+- Interrupted updates must not cause incomplete firmware to be treated as a valid candidate.
+- Boot-state transitions and fallback behavior must remain consistent when flash operations or validation fail.
+- Version checks and rollback behavior will be assessed against the implemented version policy. Strong anti-rollback protection is not assumed.
+- Firmware authenticity is outside the project scope. SHA-256 comparison alone cannot establish authenticity if both an image and its expected digest can be modified.
+- Protocol-specific scenarios will be refined after update-protocol integration.
+- Threat severity and control effectiveness will be assessed during security control mapping, source-code review, hardening, and testing.
