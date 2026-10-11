@@ -77,3 +77,33 @@ SHA-256 comparison verifies that the calculated digest matches the expected dige
   in addition to firmware digest verification.
 - Asset protection effectiveness will be evaluated through threat scenarios,
   source-code review, security hardening, and relevant test evidence.
+
+  ## 3. Attack Surface Identification
+
+### Attack Surface Inventory
+
+| Attack Surface ID&nbsp;&nbsp; | Attack Surface | Potential Security Concern | Related Assets |
+|---|---|---|---|
+| AS-01 | Firmware images in staging, Slot A, and Slot B | Firmware corruption or modification may go undetected if validation is missing, incorrect, or performed on the wrong image region. | AST-02, AST-03, AST-04 |
+| AS-02 | Firmware metadata | Corrupted or manipulated magic values, image sizes, versions, digests, sequence numbers, or state fields may affect validation and boot decisions. | AST-05, AST-06, AST-08 |
+| AS-03 | Image address and size validation | Invalid addresses, oversized images, or arithmetic overflow may cause incorrect memory-range checks or verification of unintended flash contents. | AST-07, AST-08, AST-09 |
+| AS-04 | SHA-256 calculation and comparison | Incorrect digest length, image boundaries, or error handling may cause corrupted firmware to be accepted or valid firmware to be rejected. | AST-07, AST-14 |
+| AS-05 | Staging-to-slot firmware transfer | An interrupted or incomplete copy from staging to the destination slot may leave an invalid candidate image. | AST-03, AST-04, AST-10 |
+| AS-06 | Flash erase and programming operations | Incorrect sector selection, programming failures, or interrupted operations may corrupt firmware or metadata and leave inconsistent update state. | AST-05, AST-06, AST-10 |
+| AS-07 | Metadata state transitions and boot selection | Invalid or inconsistent state transitions may cause the bootloader to select an unvalidated image or mishandle recovery. | AST-05, AST-06, AST-11 |
+| AS-08 | Application handover | Invalid stack-pointer or reset-handler values, incorrect vector-table configuration, or address mismatches may cause an unsafe jump to an application. | AST-02, AST-03, AST-11, AST-12 |
+| AS-09 | Host-side firmware and metadata preparation | Mismatches between binary size, padding, digest calculation, and device-side verification may cause incorrect verification results. | AST-13, AST-14 |
+| AS-10 | Firmware update inputs and protocol | Malformed, oversized, corrupted, or incomplete update data may reach the staging or flash-programming logic without adequate validation. | AST-04, AST-10, AST-15 |
+| AS-11 | Debug and programming interface | Programming access may permit unintended firmware or metadata modification if access is available and not appropriately restricted. | AST-01, AST-02, AST-03, AST-05, AST-06 |
+
+### Attack Surface Assessment Notes
+
+- **Flash contents:** Firmware images and metadata can be affected by corruption, unintended writes, or unauthorized modification.
+- **Metadata processing:** Fields used for image validation and boot selection must be validated before use.
+- **Image verification:** The image address, size, and exact bytes used for SHA-256 calculation must be consistent across host-side and bootloader implementations.
+- **Update operations:** Firmware copying, flash erase/program operations, and metadata state transitions must handle failures and interruptions safely.
+- **Boot decision and handover:** Only an image that satisfies the implemented validation requirements should be selected for execution. Its execution addresses must also be checked.
+- **External inputs:** Protocol-specific attack surfaces will be assessed against the implemented update protocol once integration is complete.
+- **Debug access:** Security restrictions on SWD/ST-LINK access depend on the device configuration and deployment assumptions; they are not presumed to be enabled.
+
+The attack surfaces listed above are potential points of influence, not confirmed vulnerabilities. Their actual exploitability and the effectiveness of existing controls will be evaluated through threat scenario analysis, source-code review, and testing.
